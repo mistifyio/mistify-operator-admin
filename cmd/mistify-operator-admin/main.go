@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 
+	"local/mistify-operator-admin"
 	"local/mistify-operator-admin/config"
 	"local/mistify-operator-admin/db"
 
@@ -42,4 +43,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	operator.Run(port)
 }
