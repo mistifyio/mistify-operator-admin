@@ -1,6 +1,7 @@
 package operator
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 
@@ -17,7 +18,7 @@ func RegisterFlavorRoutes(prefix string, router *mux.Router) {
 	sub := router.PathPrefix(prefix).Subrouter()
 	sub.HandleFunc("/{flavorID}", GetFlavor).Methods("GET")
 	sub.HandleFunc("/{flavorID}", UpdateFlavor).Methods("PATCH")
-	sub.HandleFunc("/{flavorID}", DeleteFlavor).Methods("Delete")
+	sub.HandleFunc("/{flavorID}", DeleteFlavor).Methods("DELETE")
 }
 
 func ListFlavors(w http.ResponseWriter, r *http.Request) {
@@ -99,6 +100,7 @@ func DeleteFlavor(w http.ResponseWriter, r *http.Request) {
 	err := flavor.Delete()
 	if err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
+		return
 	}
 	hr.JSON(http.StatusOK, flavor)
 }
@@ -116,7 +118,7 @@ func getFlavorHelper(hr HttpResponse, r *http.Request) (*models.Flavor, bool) {
 	}
 	flavor, err := models.FetchFlavor(flavorID)
 	if err != nil {
-		if err.Error() == "sql: no rows in result set" {
+		if err == sql.ErrNoRows {
 			hr.JSONMsg(http.StatusNotFound, "not found")
 			return nil, false
 		}

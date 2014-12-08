@@ -44,10 +44,11 @@ func Run(port uint) error {
 	// work cleanly. The register functions need to add a base path handler to
 	// the main router before setting subhandlers on either main or subrouter
 
-	// users.RegisterHandlers(r)
 	// permissions.RegisterHandlers(r)
 	// network.RegisterHandlers(r)
 	// hypervisors.RegisterHandlers(r)
+	RegisterProjectRoutes("/projects", router)
+	RegisterUserRoutes("/users", router)
 	RegisterFlavorRoutes("/flavors", router)
 	// generalConfig.RegisterHandlers(r)
 
