@@ -44,10 +44,8 @@ func CreateFlavor(w http.ResponseWriter, r *http.Request) {
 	hr := HttpResponse{w}
 
 	// Parse Request
-	var flavor models.Flavor
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&flavor)
-	if err != nil {
+	flavor := &models.Flavor{}
+	if err := flavor.FromJSON(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -59,7 +57,7 @@ func CreateFlavor(w http.ResponseWriter, r *http.Request) {
 	}
 	flavor.NewID()
 
-	ok := saveFlavorHelper(hr, &flavor)
+	ok := saveFlavorHelper(hr, flavor)
 	if !ok {
 		return
 	}
@@ -74,10 +72,8 @@ func UpdateFlavor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse Request
-	decoder := json.NewDecoder(r.Body)
-	var flavorUpdates models.Flavor
-	err := decoder.Decode(&flavorUpdates)
-	if err != nil {
+	flavor := &models.Flavor{}
+	if err := flavor.FromJSON(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}

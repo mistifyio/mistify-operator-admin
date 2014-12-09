@@ -1,18 +1,22 @@
 package models
 
 import (
+	"database/sql"
+	"encoding/json"
 	"errors"
+	"io"
 	"local/mistify-operator-admin/db"
 
 	"code.google.com/p/go-uuid/uuid"
 )
 
 type Flavor struct {
-	ID     string `json:"id"`
-	Name   string `json:"name"`
-	CPU    int    `json:"cpu"`    // Number of Cores
-	Memory int    `json:"memory"` // Size in MB
-	Disk   int    `json:"disk"`   // Size in MB
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	CPU      int               `json:"cpu"`    // Number of Cores
+	Memory   int               `json:"memory"` // Size in MB
+	Disk     int               `json:"disk"`   // Size in MB
+	Metadata map[string]string `json:"metadata"`
 }
 
 func (flavor *Flavor) Validate() error {
@@ -51,31 +55,37 @@ func (flavor *Flavor) Save() error {
 	// See: http://stackoverflow.com/a/8702291
 	// And: http://dba.stackexchange.com/a/78535
 	sql := `
-	WITH new_values (flavor_id, name, cpu, memory, disk) as (
-		VALUES ($1::uuid, $2, $3::integer, $4::integer, $5::integer)
+	WITH new_values (flavor_id, name, cpu, memory, disk, metadata) as (
+		VALUES ($1::uuid, $2, $3::integer, $4::integer, $5::integer, $6::json)
 	),
 	upsert as (
 		UPDATE flavors f SET
 			name = nv.name,
 			cpu = nv.cpu,
 			memory = nv.memory,
-			disk = nv.disk
+			disk = nv.disk,
+			metadata = nv.metadata
 		FROM new_values nv
 		WHERE f.flavor_id = nv.flavor_id
 		RETURNING nv.flavor_id
 	)
 	INSERT INTO flavors
-		(flavor_id, name, cpu, memory, disk)
-	SELECT flavor_id, name, cpu, memory, disk
+		(flavor_id, name, cpu, memory, disk, metadata)
+	SELECT flavor_id, name, cpu, memory, disk, metadata
 	FROM new_values nv
 	WHERE NOT EXISTS (SELECT 1 FROM upsert u WHERE nv.flavor_id = u.flavor_id)
 	`
+	metadata, err := json.Marshal(flavor.Metadata)
+	if err != nil {
+		return err
+	}
 	_, err = d.Exec(sql,
 		flavor.ID,
 		flavor.Name,
 		flavor.CPU,
 		flavor.Memory,
 		flavor.Disk,
+		string(metadata),
 	)
 	return err
 }
@@ -92,6 +102,9 @@ func (flavor *Flavor) Apply(update *Flavor) {
 	}
 	if update.Disk != 0 {
 		flavor.Disk = update.Disk
+	}
+	if update.Metadata != nil {
+		flavor.Metadata = update.Metadata
 	}
 }
 
@@ -111,17 +124,43 @@ func (flavor *Flavor) Load() error {
 		return err
 	}
 	sql := `
-	SELECT name, cpu, memory, disk
+	SELECT flavor_id, name, cpu, memory, disk, metadata
 	FROM flavors
 	WHERE flavor_id = $1
 	`
-	err = d.QueryRow(sql, flavor.ID).Scan(
+	rows, err := d.Query(sql, flavor.ID)
+	if err != nil {
+		return err
+	}
+	rows.Next()
+	return flavor.fromRows(rows)
+}
+
+func (flavor *Flavor) fromRows(rows *sql.Rows) error {
+	var metadata string
+	err := rows.Scan(
+		&flavor.ID,
 		&flavor.Name,
 		&flavor.CPU,
 		&flavor.Memory,
 		&flavor.Disk,
+		&metadata,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(metadata), &flavor.Metadata)
+}
+
+func (flavor *Flavor) FromJSON(data io.Reader) error {
+	decoder := json.NewDecoder(data)
+	if err := decoder.Decode(flavor); err != nil {
+		return err
+	}
+	if flavor.Metadata == nil {
+		flavor.Metadata = make(map[string]string)
+	}
+	return nil
 }
 
 func (flavor *Flavor) NewID() string {
@@ -131,7 +170,8 @@ func (flavor *Flavor) NewID() string {
 
 func NewFlavor() *Flavor {
 	flavor := &Flavor{
-		ID: uuid.New(),
+		ID:       uuid.New(),
+		Metadata: make(map[string]string),
 	}
 	return flavor
 }
@@ -140,8 +180,7 @@ func FetchFlavor(id string) (*Flavor, error) {
 	flavor := &Flavor{
 		ID: id,
 	}
-	err := flavor.Load()
-	if err != nil {
+	if err := flavor.Load(); err != nil {
 		return nil, err
 	}
 	return flavor, nil
@@ -153,7 +192,7 @@ func ListFlavors() ([]*Flavor, error) {
 		return nil, err
 	}
 	sql := `
-	SELECT flavor_id, name, cpu, memory, disk
+	SELECT flavor_id, name, cpu, memory, disk, metadata
 	FROM flavors
 	ORDER BY flavor_id asc
 	`
@@ -165,13 +204,9 @@ func ListFlavors() ([]*Flavor, error) {
 	flavors := make([]*Flavor, 0, 1)
 	for rows.Next() {
 		flavor := &Flavor{}
-		rows.Scan(
-			&flavor.ID,
-			&flavor.Name,
-			&flavor.CPU,
-			&flavor.Memory,
-			&flavor.Disk,
-		)
+		if err := flavor.fromRows(rows); err != nil {
+			return nil, err
+		}
 		flavors = append(flavors, flavor)
 	}
 	if err = rows.Err(); err != nil {
