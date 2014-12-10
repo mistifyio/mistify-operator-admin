@@ -117,8 +117,12 @@ func (flavor *Flavor) Load() error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 	rows.Next()
-	return flavor.fromRows(rows)
+	if err := flavor.fromRows(rows); err != nil {
+		return err
+	}
+	return rows.Err()
 }
 
 func (flavor *Flavor) fromRows(rows *sql.Rows) error {
@@ -190,7 +194,6 @@ func ListFlavors() ([]*Flavor, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	flavors := make([]*Flavor, 0, 1)
 	for rows.Next() {
 		flavor := &Flavor{}

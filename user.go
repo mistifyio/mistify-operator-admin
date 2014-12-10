@@ -122,7 +122,7 @@ func SetUserProjects(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var projectIDs []*string
+	var projectIDs []string
 	decoder := json.NewDecoder(r.Body)
 	err := decoder.Decode(&projectIDs)
 	if err != nil {

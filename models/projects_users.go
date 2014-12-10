@@ -22,7 +22,14 @@ func UsersByProject(projectID string) ([]*User, error) {
 	if err != nil {
 		return nil, err
 	}
-	return usersFromRows(rows)
+	users, err := usersFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
 }
 
 func ProjectsByUser(userID string) ([]*Project, error) {
@@ -41,7 +48,14 @@ func ProjectsByUser(userID string) ([]*Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	return projectsFromRows(rows)
+	projects, err := projectsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return projects, nil
 }
 
 func AddProjectUser(projectID string, userID string) error {
@@ -71,7 +85,7 @@ func RemoveProjectUser(projectID string, userID string) error {
 	return err
 }
 
-func SetProjectUsers(projectID string, userIDs []*string) error {
+func SetProjectUsers(projectID string, userIDs []string) error {
 	d, err := db.Connect(nil)
 	if err != nil {
 		return err
@@ -106,7 +120,7 @@ func SetProjectUsers(projectID string, userIDs []*string) error {
 	return err
 }
 
-func SetUserProjects(userID string, projectIDs []*string) error {
+func SetUserProjects(userID string, projectIDs []string) error {
 	d, err := db.Connect(nil)
 	if err != nil {
 		return err

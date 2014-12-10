@@ -101,8 +101,12 @@ func (project *Project) Load() error {
 	if err != nil {
 		return err
 	}
+	defer rows.Close()
 	rows.Next()
-	return project.fromRows(rows)
+	if err := project.fromRows(rows); err != nil {
+		return err
+	}
+	return rows.Err()
 }
 
 func (project *Project) fromRows(rows *sql.Rows) error {
@@ -143,7 +147,7 @@ func (project *Project) LoadUsers() error {
 	return nil
 }
 
-func (project *Project) SetUsers(userIDs []*string) error {
+func (project *Project) SetUsers(userIDs []string) error {
 	err := SetProjectUsers(project.ID, userIDs)
 	if err != nil {
 		return err
@@ -208,15 +212,11 @@ func ListProjects() ([]*Project, error) {
 }
 
 func projectsFromRows(rows *sql.Rows) ([]*Project, error) {
-	defer rows.Close()
 	projects := make([]*Project, 0, 1)
 	for rows.Next() {
 		project := &Project{}
 		project.fromRows(rows)
 		projects = append(projects, project)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
 	}
 	return projects, nil
 }
