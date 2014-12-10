@@ -2,11 +2,13 @@ package operator
 
 import (
 	"encoding/json"
-	"github.com/gorilla/mux"
 	"net/http"
 
-	"code.google.com/p/go-uuid/uuid"
+	"github.com/gorilla/mux"
+
 	"local/mistify-operator-admin/models"
+
+	"code.google.com/p/go-uuid/uuid"
 )
 
 func RegisterUserRoutes(prefix string, router *mux.Router) {
@@ -45,10 +47,8 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	hr := HttpResponse{w}
 
 	// Parse Request
-	var user models.User
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&user)
-	if err != nil {
+	user := &models.User{}
+	if err := user.Decode(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -60,7 +60,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user.NewID()
 
-	ok := saveUserHelper(hr, &user)
+	ok := saveUserHelper(hr, user)
 	if !ok {
 		return
 	}
@@ -75,15 +75,11 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse Request
-	decoder := json.NewDecoder(r.Body)
-	var userUpdates models.User
-	err := decoder.Decode(&userUpdates)
-	if err != nil {
+	if err := user.Decode(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	user.Apply(&userUpdates)
 	ok = saveUserHelper(hr, user)
 	if !ok {
 		return

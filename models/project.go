@@ -2,16 +2,19 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"io"
 	"local/mistify-operator-admin/db"
 
 	"code.google.com/p/go-uuid/uuid"
 )
 
 type Project struct {
-	ID    string  `json:"id"`
-	Name  string  `json:"name"`
-	Users []*User `json:"-"`
+	ID       string            `json:"id"`
+	Name     string            `json:"name"`
+	Metadata map[string]string `json:"metadata"`
+	Users    []*User           `json:"-"`
 }
 
 func (project *Project) Validate() error {
@@ -23,6 +26,9 @@ func (project *Project) Validate() error {
 	}
 	if project.Name == "" {
 		return errors.New("missing name")
+	}
+	if project.Metadata == nil {
+		return errors.New("metadata must not be nil")
 	}
 	return nil
 }
@@ -42,33 +48,33 @@ func (project *Project) Save() error {
 	// See: http://stackoverflow.com/a/8702291
 	// And: http://dba.stackexchange.com/a/78535
 	sql := `
-	WITH new_values (project_id, name) as (
-		VALUES ($1::uuid, $2)
+	WITH new_values (project_id, name, metadata) as (
+		VALUES ($1::uuid, $2, $3::json)
 	),
 	upsert as (
 		UPDATE projects p SET
-			name = nv.name
+			name = nv.name,
+			metadata = nv.metadata
 		FROM new_values nv
 		WHERE p.project_id = nv.project_id
 		RETURNING nv.project_id
 	)
 	INSERT INTO projects
-		(project_id, name)
-	SELECT project_id, name
+		(project_id, name, metadata)
+	SELECT project_id, name, metadata
 	FROM new_values nv
 	WHERE NOT EXISTS (SELECT 1 FROM upsert u WHERE nv.project_id = u.project_id)
 	`
+	metadata, err := json.Marshal(project.Metadata)
+	if err != nil {
+		return err
+	}
 	_, err = d.Exec(sql,
 		project.ID,
 		project.Name,
+		string(metadata),
 	)
 	return err
-}
-
-func (project *Project) Apply(update *Project) {
-	if update.Name != "" {
-		project.Name = update.Name
-	}
 }
 
 func (project *Project) Delete() error {
@@ -87,14 +93,45 @@ func (project *Project) Load() error {
 		return err
 	}
 	sql := `
-	SELECT name
+	SELECT project_id, name, metadata
 	FROM projects
 	WHERE project_id = $1
 	`
-	err = d.QueryRow(sql, project.ID).Scan(
+	rows, err := d.Query(sql, project.ID)
+	if err != nil {
+		return err
+	}
+	rows.Next()
+	return project.fromRows(rows)
+}
+
+func (project *Project) fromRows(rows *sql.Rows) error {
+	var metadata string
+	err := rows.Scan(
+		&project.ID,
 		&project.Name,
+		&metadata,
 	)
-	return err
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(metadata), &project.Metadata)
+}
+
+func (project *Project) Decode(data io.Reader) error {
+	if err := json.NewDecoder(data).Decode(project); err != nil {
+		return err
+	}
+	if project.Metadata == nil {
+		project.Metadata = make(map[string]string)
+	} else {
+		for key, value := range project.Metadata {
+			if value == "" {
+				delete(project.Metadata, key)
+			}
+		}
+	}
+	return nil
 }
 
 func (project *Project) LoadUsers() error {
@@ -159,7 +196,7 @@ func ListProjects() ([]*Project, error) {
 		return nil, err
 	}
 	sql := `
-	SELECT project_id, name
+	SELECT project_id, name, metadata
 	FROM projects
 	ORDER BY project_id asc
 	`
@@ -175,10 +212,7 @@ func projectsFromRows(rows *sql.Rows) ([]*Project, error) {
 	projects := make([]*Project, 0, 1)
 	for rows.Next() {
 		project := &Project{}
-		rows.Scan(
-			&project.ID,
-			&project.Name,
-		)
+		project.fromRows(rows)
 		projects = append(projects, project)
 	}
 	if err := rows.Err(); err != nil {

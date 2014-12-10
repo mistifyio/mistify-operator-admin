@@ -38,6 +38,9 @@ func (flavor *Flavor) Validate() error {
 	if flavor.Disk <= 0 {
 		return errors.New("disk must be > 0")
 	}
+	if flavor.Metadata == nil {
+		return errors.New("metadata must not be nil")
+	}
 	return nil
 }
 
@@ -90,24 +93,6 @@ func (flavor *Flavor) Save() error {
 	return err
 }
 
-func (flavor *Flavor) Apply(update *Flavor) {
-	if update.Name != "" {
-		flavor.Name = update.Name
-	}
-	if update.CPU != 0 {
-		flavor.CPU = update.CPU
-	}
-	if update.Memory != 0 {
-		flavor.Memory = update.Memory
-	}
-	if update.Disk != 0 {
-		flavor.Disk = update.Disk
-	}
-	if update.Metadata != nil {
-		flavor.Metadata = update.Metadata
-	}
-}
-
 func (flavor *Flavor) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -152,13 +137,18 @@ func (flavor *Flavor) fromRows(rows *sql.Rows) error {
 	return json.Unmarshal([]byte(metadata), &flavor.Metadata)
 }
 
-func (flavor *Flavor) FromJSON(data io.Reader) error {
-	decoder := json.NewDecoder(data)
-	if err := decoder.Decode(flavor); err != nil {
+func (flavor *Flavor) Decode(data io.Reader) error {
+	if err := json.NewDecoder(data).Decode(flavor); err != nil {
 		return err
 	}
 	if flavor.Metadata == nil {
 		flavor.Metadata = make(map[string]string)
+	} else {
+		for key, value := range flavor.Metadata {
+			if value == "" {
+				delete(flavor.Metadata, key)
+			}
+		}
 	}
 	return nil
 }

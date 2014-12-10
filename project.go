@@ -45,10 +45,8 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	hr := HttpResponse{w}
 
 	// Parse Request
-	var project models.Project
-	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&project)
-	if err != nil {
+	project := &models.Project{}
+	if err := project.Decode(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -60,7 +58,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 	project.NewID()
 
-	ok := saveProjectHelper(hr, &project)
+	ok := saveProjectHelper(hr, project)
 	if !ok {
 		return
 	}
@@ -74,16 +72,10 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 		return // Specific response handled by getProjectHelper
 	}
 
-	// Parse Request
-	decoder := json.NewDecoder(r.Body)
-	var projectUpdates models.Project
-	err := decoder.Decode(&projectUpdates)
-	if err != nil {
+	if err := project.Decode(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
-
-	project.Apply(&projectUpdates)
 	ok = saveProjectHelper(hr, project)
 	if !ok {
 		return

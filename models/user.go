@@ -2,7 +2,9 @@ package models
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
+	"io"
 	"local/mistify-operator-admin/db"
 	"net/mail"
 
@@ -10,10 +12,11 @@ import (
 )
 
 type User struct {
-	ID       string     `json:"id"`
-	Username string     `json:"username"`
-	Email    string     `json:"email"`
-	Projects []*Project `json:"-"`
+	ID       string            `json:"id"`
+	Username string            `json:"username"`
+	Email    string            `json:"email"`
+	Metadata map[string]string `json:"metadata"`
+	Projects []*Project        `json:"-"`
 }
 
 func (user *User) Validate() error {
@@ -50,31 +53,38 @@ func (user *User) Save() error {
 	// See: http://stackoverflow.com/a/8702291
 	// And: http://dba.stackexchange.com/a/78535
 	sql := `
-	WITH new_values (user_id, username, email) as (
-		VALUES ($1::uuid, $2, $3)
+	WITH new_values (user_id, username, email, metadata) as (
+		VALUES ($1::uuid, $2, $3, $4::json)
 	),
 	upsert as (
 		UPDATE users u SET
 			username = nv.username,
-			email = nv.email
+			email = nv.email,
+			metadata = nv.metadata
 		FROM new_values nv
 		WHERE u.user_id = nv.user_id
 		RETURNING nv.user_id
 	)
 	INSERT INTO users
-		(user_id, username, email)
-	SELECT user_id, username, email
+		(user_id, username, email, metadata)
+	SELECT user_id, username, email, metadata
 	FROM new_values nv
 	WHERE NOT EXISTS (SELECT 1 FROM upsert u WHERE nv.user_id = u.user_id)
 	`
+	metadata, err := json.Marshal(user.Metadata)
+	if err != nil {
+		return err
+	}
 	_, err = d.Exec(sql,
 		user.ID,
 		user.Username,
 		user.Email,
+		string(metadata),
 	)
 	return err
 }
 
+/*
 func (user *User) Apply(update *User) {
 	if update.Username != "" {
 		user.Username = update.Username
@@ -83,6 +93,7 @@ func (user *User) Apply(update *User) {
 		user.Email = update.Email
 	}
 }
+*/
 
 func (user *User) Delete() error {
 	d, err := db.Connect(nil)
@@ -100,12 +111,46 @@ func (user *User) Load() error {
 		return err
 	}
 	sql := `
-	SELECT username, email
+	SELECT user_id, username, email, metadata
 	FROM users
 	WHERE user_id = $1
 	`
-	err = d.QueryRow(sql, user.ID).Scan(&user.Username, &user.Email)
-	return err
+	rows, err := d.Query(sql, user.ID)
+	if err != nil {
+		return err
+	}
+	rows.Next()
+	return user.fromRows(rows)
+}
+
+func (user *User) fromRows(rows *sql.Rows) error {
+	var metadata string
+	err := rows.Scan(
+		&user.ID,
+		&user.Username,
+		&user.Email,
+		&metadata,
+	)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal([]byte(metadata), &user.Metadata)
+}
+
+func (user *User) Decode(data io.Reader) error {
+	if err := json.NewDecoder(data).Decode(user); err != nil {
+		return err
+	}
+	if user.Metadata == nil {
+		user.Metadata = make(map[string]string)
+	} else {
+		for key, value := range user.Metadata {
+			if value == "" {
+				delete(user.Metadata, key)
+			}
+		}
+	}
+	return nil
 }
 
 func (user *User) LoadProjects() error {
@@ -170,7 +215,7 @@ func ListUsers() ([]*User, error) {
 		return nil, err
 	}
 	sql := `
-	SELECT user_id, username, email
+	SELECT user_id, username, email, metadata
 	FROM users
 	ORDER BY user_id asc
 	`
@@ -186,7 +231,7 @@ func usersFromRows(rows *sql.Rows) ([]*User, error) {
 	users := make([]*User, 0, 1)
 	for rows.Next() {
 		user := &User{}
-		if err := rows.Scan(&user.ID, &user.Username, &user.Email); err != nil {
+		if err := user.fromRows(rows); err != nil {
 			return nil, err
 		}
 		users = append(users, user)

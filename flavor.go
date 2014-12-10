@@ -2,7 +2,6 @@ package operator
 
 import (
 	"database/sql"
-	"encoding/json"
 	"net/http"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -45,7 +44,7 @@ func CreateFlavor(w http.ResponseWriter, r *http.Request) {
 
 	// Parse Request
 	flavor := &models.Flavor{}
-	if err := flavor.FromJSON(r.Body); err != nil {
+	if err := flavor.Decode(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
@@ -72,13 +71,11 @@ func UpdateFlavor(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Parse Request
-	flavor := &models.Flavor{}
-	if err := flavor.FromJSON(r.Body); err != nil {
+	if err := flavor.Decode(r.Body); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	flavor.Apply(&flavorUpdates)
 	ok = saveFlavorHelper(hr, flavor)
 	if !ok {
 		return
