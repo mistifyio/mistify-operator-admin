@@ -84,17 +84,6 @@ func (user *User) Save() error {
 	return err
 }
 
-/*
-func (user *User) Apply(update *User) {
-	if update.Username != "" {
-		user.Username = update.Username
-	}
-	if _, err := mail.ParseAddress(update.Email); err == nil {
-		user.Email = update.Email
-	}
-}
-*/
-
 func (user *User) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
