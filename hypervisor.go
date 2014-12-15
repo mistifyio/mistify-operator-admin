@@ -2,6 +2,7 @@ package operator
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -18,6 +19,10 @@ func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{hypervisorID}", GetHypervisor).Methods("GET")
 	sub.HandleFunc("/{hypervisorID}", UpdateHypervisor).Methods("PATCH")
 	sub.HandleFunc("/{hypervisorID}", DeleteHypervisor).Methods("DELETE")
+	sub.HandleFunc("/{hypervisorID}/ipranges", GetHypervisorIPRanges).Methods("GET")
+	sub.HandleFunc("/{hypervisorID}/ipranges", SetHypervisorIPRanges).Methods("PUT")
+	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", AddHypervisorIPRange).Methods("PUT")
+	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", RemoveHypervisorIPRange).Methods("DELETE")
 }
 
 func ListHypervisors(w http.ResponseWriter, r *http.Request) {
@@ -96,6 +101,79 @@ func DeleteHypervisor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	hr.JSON(http.StatusOK, hypervisor)
+}
+
+func GetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
+	hr := HttpResponse{w}
+	hypervisor, ok := getHypervisorHelper(hr, r)
+	if !ok {
+		return
+	}
+	err := hypervisor.LoadIPRanges()
+	if err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, hypervisor.IPRanges)
+}
+
+func SetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
+	hr := HttpResponse{w}
+	hypervisor, ok := getHypervisorHelper(hr, r)
+	if !ok {
+		return
+	}
+	var iprangeIDs []string
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&iprangeIDs); err != nil {
+		hr.JSONMsg(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ipranges := make([]*models.IPRange, len(iprangeIDs))
+	for i, v := range iprangeIDs {
+		ipranges[i] = &models.IPRange{ID: v}
+	}
+
+	if err := hypervisor.SetIPRanges(ipranges); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusOK, hypervisor) // TODO: Make this retrieve the new ip set
+}
+
+func AddHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
+	hr := HttpResponse{w}
+	hypervisor, ok := getHypervisorHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	iprangeID, ok := vars["iprangeID"]
+
+	if err := hypervisor.AddIPRange(&models.IPRange{ID: iprangeID}); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusOK, &struct{}{})
+}
+
+func RemoveHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
+	hr := HttpResponse{w}
+	hypervisor, ok := getHypervisorHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	iprangeID, ok := vars["iprangeID"]
+
+	if err := hypervisor.RemoveIPRange(&models.IPRange{ID: iprangeID}); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusOK, &struct{}{})
 }
 
 func getHypervisorHelper(hr HttpResponse, r *http.Request) (*models.Hypervisor, bool) {

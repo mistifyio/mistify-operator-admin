@@ -32,6 +32,14 @@ type (
 	}
 )
 
+func (iprange *IPRange) id() string {
+	return iprange.ID
+}
+
+func (iprange *IPRange) pkeyName() string {
+	return "iprange_id"
+}
+
 func (iprange *IPRange) importData(data *ipRangeData) error {
 	_, cidr, err := net.ParseCIDR(data.CIDR)
 	if err != nil {
@@ -257,6 +265,44 @@ func ListIPRanges() ([]*IPRange, error) {
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
+	}
+	return ipranges, nil
+}
+
+func IPRangesByHypervisor(hypervisor *Hypervisor) ([]*IPRange, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT i.iprange_id, i.cidr, i.gateway, i.start_ip, i.end_ip, i.metadata
+	FROM ipranges i
+	JOIN hypervisors_ipranges hi ON i.iprange_id = hi.iprange_id
+	WHERE hi.hypervisor_id = $1
+	ORDER BY i.iprange_id asc
+	`
+	rows, err := d.Query(sql, hypervisor.ID)
+	if err != nil {
+		return nil, err
+	}
+	ipranges, err := iprangesFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ipranges, nil
+}
+
+func iprangesFromRows(rows *sql.Rows) ([]*IPRange, error) {
+	ipranges := make([]*IPRange, 0, 1)
+	for rows.Next() {
+		iprange := &IPRange{}
+		if err := iprange.fromRows(rows); err != nil {
+			return nil, err
+		}
+		ipranges = append(ipranges, iprange)
 	}
 	return ipranges, nil
 }

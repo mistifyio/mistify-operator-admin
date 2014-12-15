@@ -16,6 +16,14 @@ type Network struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
+func (network *Network) id() string {
+	return network.ID
+}
+
+func (network *Network) pkeyName() string {
+	return "network_id"
+}
+
 func (network *Network) Validate() error {
 	if network.ID == "" {
 		return errors.New("missing id")

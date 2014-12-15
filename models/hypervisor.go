@@ -29,6 +29,14 @@ type (
 	}
 )
 
+func (hypervisor *Hypervisor) id() string {
+	return hypervisor.ID
+}
+
+func (hypervisor *Hypervisor) pkeyName() string {
+	return "hypervisor_id"
+}
+
 func (hypervisor *Hypervisor) importData(data *hypervisorData) error {
 	mac, err := net.ParseMAC(data.MAC)
 	if err != nil {
@@ -195,6 +203,34 @@ func (hypervisor *Hypervisor) Decode(data io.Reader) error {
 	return nil
 }
 
+func (hypervisor *Hypervisor) LoadIPRanges() error {
+	ipranges, err := IPRangesByHypervisor(hypervisor)
+	if err != nil {
+		return err
+	}
+	hypervisor.IPRanges = ipranges
+	return nil
+}
+
+func (hypervisor *Hypervisor) AddIPRange(iprange *IPRange) error {
+	return AddRelation("hypervisors_ipranges", hypervisor, iprange)
+}
+
+func (hypervisor *Hypervisor) RemoveIPRange(iprange *IPRange) error {
+	return RemoveRelation("hypervisors_ipranges", hypervisor, iprange)
+}
+
+func (hypervisor *Hypervisor) SetIPRanges(ipranges []*IPRange) error {
+	if len(ipranges) == 0 {
+		return ClearRelations("hypervisors_ipranges", hypervisor)
+	}
+	relatables := make([]relatable, len(ipranges))
+	for i, iprange := range ipranges {
+		relatables[i] = relatable(iprange)
+	}
+	return SetRelations("hypervisors_ipranges", hypervisor, relatables)
+}
+
 func (hypervisor *Hypervisor) NewID() string {
 	hypervisor.ID = uuid.New()
 	return hypervisor.ID
@@ -242,6 +278,44 @@ func ListHypervisors() ([]*Hypervisor, error) {
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
+	}
+	return hypervisors, nil
+}
+
+func HypervisorsByIPRange(iprange *IPRange) ([]*Hypervisor, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT h.hypervisor_id, h.mac, h.ip, h.metadata
+	FROM hypervisors h
+	JOIN hypervisors_ipranges hi ON h.hypervisor_id = hi.hypervisor_id
+	WHERE hi.iprange_id = $1
+	ORDER BY h.hypervisor_id asc
+	`
+	rows, err := d.Query(sql, iprange.ID)
+	if err != nil {
+		return nil, err
+	}
+	hypervisors, err := hypervisorsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return hypervisors, nil
+}
+
+func hypervisorsFromRows(rows *sql.Rows) ([]*Hypervisor, error) {
+	hypervisors := make([]*Hypervisor, 0, 1)
+	for rows.Next() {
+		hypervisor := &Hypervisor{}
+		if err := hypervisor.fromRows(rows); err != nil {
+			return nil, err
+		}
+		hypervisors = append(hypervisors, hypervisor)
 	}
 	return hypervisors, nil
 }
