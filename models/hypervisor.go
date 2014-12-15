@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"local/mistify-operator-admin/db"
 	"net"
@@ -14,12 +15,55 @@ import (
 type (
 	Hypervisor struct {
 		ID       string            `json:"id"`
-		Mac      net.HardwareAddr  `json:"mac"`
-		IPv6     net.IP            `json:"ipv6"`
+		MAC      net.HardwareAddr  `json:"mac"`
+		IP       net.IP            `json:"ip"`
 		Metadata map[string]string `json:"metadata"`
 		IPRanges []*IPRange        `json:"-"`
 	}
+
+	hypervisorData struct {
+		ID       string            `json:"id"`
+		MAC      string            `json:"mac"`
+		IP       string            `json:"ip"`
+		Metadata map[string]string `json:"metadata"`
+	}
 )
+
+func (hypervisor *Hypervisor) importData(data *hypervisorData) error {
+	mac, err := net.ParseMAC(data.MAC)
+	if err != nil {
+		return err
+	}
+	hypervisor.ID = data.ID
+	hypervisor.MAC = mac
+	hypervisor.IP = net.ParseIP(data.IP)
+	hypervisor.Metadata = data.Metadata
+	return nil
+}
+
+func (hypervisor *Hypervisor) exportData() *hypervisorData {
+	return &hypervisorData{
+		ID:       hypervisor.ID,
+		MAC:      fmtString(hypervisor.MAC),
+		IP:       fmtString(hypervisor.IP),
+		Metadata: hypervisor.Metadata,
+	}
+}
+
+func (hypervisor *Hypervisor) UnmarshalJSON(b []byte) error {
+	data := &hypervisorData{}
+	if err := json.Unmarshal(b, data); err != nil {
+		return err
+	}
+	if err := hypervisor.importData(data); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (hypervisor Hypervisor) MarshalJSON() ([]byte, error) {
+	return json.Marshal(hypervisor.exportData())
+}
 
 func (hypervisor *Hypervisor) Validate() error {
 	if hypervisor.ID == "" {
@@ -28,11 +72,11 @@ func (hypervisor *Hypervisor) Validate() error {
 	if uuid.Parse(hypervisor.ID) == nil {
 		return errors.New("invalid id. must be uuid")
 	}
-	if hypervisor.Mac == nil {
+	if hypervisor.MAC == nil {
 		return errors.New("missing mac")
 	}
-	if hypervisor.IPv6 == nil {
-		return errors.New("missing ipv6")
+	if hypervisor.IP == nil {
+		return errors.New("missing ip")
 	}
 	if hypervisor.Metadata == nil {
 		return errors.New("missing metadata")
@@ -52,32 +96,34 @@ func (hypervisor *Hypervisor) Save() error {
 	// See: http://stackoverflow.com/a/8702291
 	// And: http://dba.stackexchange.com/a/78535
 	sql := `
-	WITH new_values (hypervisor_id, mac, ipv6, metadata) as (
-		VALUES ($1::uuid, $2::macaddr, $3::inet $4::json)
+	WITH new_values (hypervisor_id, mac, ip, metadata) as (
+		VALUES ($1::uuid, $2::macaddr, $3::inet, $4::json)
 	),
 	upsert as (
 		UPDATE hypervisors h SET
 			mac = nv.mac,
-			ipv6 = nv.ipv6,
+			ip = nv.ip,
 			metadata = nv.metadata
 		FROM new_values nv
 		WHERE h.hypervisor_id = nv.hypervisor_id
 		RETURNING h.hypervisor_id
 	)
 	INSERT INTO hypervisors
-		(hypervisor_id, mac, ipv6, metadata)
-	SELECT iprange_isor_id, mac, ipv6, metadata
+		(hypervisor_id, mac, ip, metadata)
+	SELECT hypervisor_id, mac, ip, metadata
 	FROM new_values nv
 	WHERE NOT EXISTS (SELECT 1 FROM upsert u WHERE nv.hypervisor_id = u.hypervisor_id)
     `
-	metadata, err := json.Marshal(hypervisor.Metadata)
+	data := hypervisor.exportData()
+	metadata, err := json.Marshal(data.Metadata)
 	if err != nil {
 		return err
 	}
+	fmt.Println(data)
 	_, err = d.Exec(sql,
-		hypervisor.ID,
-		hypervisor.Mac,
-		hypervisor.IPv6,
+		data.ID,
+		data.MAC,
+		data.IP,
 		string(metadata),
 	)
 	return err
@@ -99,7 +145,7 @@ func (hypervisor *Hypervisor) Load() error {
 		return err
 	}
 	sql := `
-	SELECT hypervisor_id, mac, ipv6, metadata
+	SELECT hypervisor_id, mac, ip, metadata
 	FROM hypervisors
 	WHERE hypervisor_id = $1
 	`
@@ -117,19 +163,20 @@ func (hypervisor *Hypervisor) Load() error {
 
 func (hypervisor *Hypervisor) fromRows(rows *sql.Rows) error {
 	var metadata string
+	data := &hypervisorData{}
 	err := rows.Scan(
-		&hypervisor.ID,
-		&hypervisor.Mac,
-		&hypervisor.IPv6,
+		&data.ID,
+		&data.MAC,
+		&data.IP,
 		&metadata,
 	)
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal([]byte(metadata), &hypervisor.Metadata); err != nil {
+	if err := json.Unmarshal([]byte(metadata), &data.Metadata); err != nil {
 		return err
 	}
-	return nil
+	return hypervisor.importData(data)
 }
 
 func (hypervisor *Hypervisor) Decode(data io.Reader) error {
@@ -177,7 +224,7 @@ func ListHypervisors() ([]*Hypervisor, error) {
 		return nil, err
 	}
 	sql := `
-	SELECT hypervisor_id, mac, ipv6, metadata
+	SELECT hypervisor_id, mac, ip, metadata
 	FROM hypervisors
 	ORDER BY hypervisor_id
 	`

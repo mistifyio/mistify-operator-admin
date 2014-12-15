@@ -25,9 +25,9 @@ type (
 	ipRangeData struct {
 		ID       string            `json:"id"`
 		CIDR     string            `json:"cidr"`
-		Gateway  net.IP            `json:"gateway"`
-		Start    net.IP            `json:"start"`
-		End      net.IP            `json:"end"`
+		Gateway  string            `json:"gateway"`
+		Start    string            `json:"start"`
+		End      string            `json:"end"`
 		Metadata map[string]string `json:"metadata"`
 	}
 )
@@ -39,9 +39,9 @@ func (iprange *IPRange) importData(data *ipRangeData) error {
 	}
 	iprange.ID = data.ID
 	iprange.CIDR = cidr
-	iprange.Gateway = data.Gateway
-	iprange.Start = data.Start
-	iprange.End = data.End
+	iprange.Gateway = net.ParseIP(data.Gateway)
+	iprange.Start = net.ParseIP(data.Start)
+	iprange.End = net.ParseIP(data.End)
 	iprange.Metadata = data.Metadata
 	return nil
 }
@@ -50,9 +50,9 @@ func (iprange *IPRange) exportData() *ipRangeData {
 	return &ipRangeData{
 		ID:       iprange.ID,
 		CIDR:     fmtString(iprange.CIDR),
-		Gateway:  iprange.Gateway,
-		Start:    iprange.Start,
-		End:      iprange.End,
+		Gateway:  fmtString(iprange.Gateway),
+		Start:    fmtString(iprange.Start),
+		End:      fmtString(iprange.End),
 		Metadata: iprange.Metadata,
 	}
 }
