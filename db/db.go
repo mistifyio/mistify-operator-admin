@@ -2,10 +2,10 @@ package db
 
 import (
 	"database/sql"
-	"local/mistify-operator-admin/config"
 	"sync"
 
 	_ "github.com/lib/pq"
+	"github.com/mistifyio/mistify-operator-admin/config"
 )
 
 // The DB structure handles connection pooling, so keep track of opened ones

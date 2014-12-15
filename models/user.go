@@ -5,10 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"local/mistify-operator-admin/db"
 	"net/mail"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
 type User struct {

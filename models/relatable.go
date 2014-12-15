@@ -3,7 +3,7 @@ package models
 import (
 	"fmt"
 
-	"local/mistify-operator-admin/db"
+	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
 type relatable interface {

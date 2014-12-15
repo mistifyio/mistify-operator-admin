@@ -6,10 +6,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"local/mistify-operator-admin/db"
 	"net"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
 type (

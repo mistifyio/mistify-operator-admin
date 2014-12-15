@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/mux"
-
-	"local/mistify-operator-admin/models"
-
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 func RegisterUserRoutes(prefix string, router *mux.Router) {

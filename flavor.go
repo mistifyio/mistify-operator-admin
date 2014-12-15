@@ -5,10 +5,8 @@ import (
 	"net/http"
 
 	"code.google.com/p/go-uuid/uuid"
-
-	"local/mistify-operator-admin/models"
-
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 func RegisterFlavorRoutes(prefix string, router *mux.Router) {

@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"local/mistify-operator-admin/db"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
 type Network struct {

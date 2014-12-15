@@ -3,12 +3,11 @@ package main
 import (
 	"os"
 
-	"local/mistify-operator-admin"
-	"local/mistify-operator-admin/config"
-	"local/mistify-operator-admin/db"
-
 	flag "github.com/docker/docker/pkg/mflag"
 	"github.com/mistifyio/mistify-agent/log"
+	"github.com/mistifyio/mistify-operator-admin"
+	"github.com/mistifyio/mistify-operator-admin/config"
+	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
 func main() {
