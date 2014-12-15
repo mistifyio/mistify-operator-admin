@@ -1,8 +1,14 @@
 package models
 
 import (
+	"database/sql"
 	"encoding/json"
+	"errors"
+	"io"
+	"local/mistify-operator-admin/db"
 	"net"
+
+	"code.google.com/p/go-uuid/uuid"
 )
 
 type (
@@ -89,7 +95,7 @@ func (iprange *IPRange) Validate() error {
 }
 
 func (iprange *IPRange) Save() error {
-	if err := network.Validate(); err != nil {
+	if err := iprange.Validate(); err != nil {
 		return err
 	}
 	d, err := db.Connect(nil)
@@ -127,10 +133,10 @@ func (iprange *IPRange) Save() error {
 	}
 	_, err = d.Exec(sql,
 		data.ID,
-		data.cidr,
-		data.gateway,
-		data.start,
-		data.end,
+		data.CIDR,
+		data.Gateway,
+		data.Start,
+		data.End,
 		string(metadata),
 	)
 	return err
@@ -182,7 +188,7 @@ func (iprange *IPRange) fromRows(rows *sql.Rows) error {
 	if err != nil {
 		return err
 	}
-	if err := json.Unmarshal([]byte(metadata), &network.Metadata); err != nil {
+	if err := json.Unmarshal([]byte(metadata), &data.Metadata); err != nil {
 		return err
 	}
 	return iprange.importData(data)
@@ -214,6 +220,7 @@ func NewIPRange() *IPRange {
 		ID:       uuid.New(),
 		Metadata: make(map[string]string),
 	}
+	return iprange
 }
 
 func FetchIPRange(id string) (*IPRange, error) {
@@ -240,9 +247,9 @@ func ListIPRanges() ([]*IPRange, error) {
 	if err != nil {
 		return nil, err
 	}
-	ipranges := make([]*Network, 0, 1)
+	ipranges := make([]*IPRange, 0, 1)
 	for rows.Next() {
-		iprange := &iprange{}
+		iprange := &IPRange{}
 		if err := iprange.fromRows(rows); err != nil {
 			return nil, err
 		}

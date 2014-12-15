@@ -45,8 +45,9 @@ func Run(port uint) error {
 	// the main router before setting subhandlers on either main or subrouter
 
 	// permissions.RegisterHandlers(r)
-	// network.RegisterHandlers(r)
-	// hypervisors.RegisterHandlers(r)
+	RegisterNetworkRoutes("/networks", router)
+	RegisterIPRangeRoutes("/ipranges", router)
+	RegisterHypervisorRoutes("/hypervisors", router)
 	RegisterProjectRoutes("/projects", router)
 	RegisterUserRoutes("/users", router)
 	RegisterFlavorRoutes("/flavors", router)
