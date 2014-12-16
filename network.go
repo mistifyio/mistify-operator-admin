@@ -2,6 +2,7 @@ package operator
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -16,6 +17,10 @@ func RegisterNetworkRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{networkID}", GetNetwork).Methods("GET")
 	sub.HandleFunc("/{networkID}", UpdateNetwork).Methods("PATCH")
 	sub.HandleFunc("/{networkID}", DeleteNetwork).Methods("DELETE")
+	sub.HandleFunc("/{networkID}/ipranges", GetNetworkIPRanges).Methods("GET")
+	sub.HandleFunc("/{networkID}/ipranges", SetNetworkIPRanges).Methods("PUT")
+	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", AddNetworkIPRange).Methods("PUT")
+	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", RemoveNetworkIPRange).Methods("DELETE")
 }
 
 func ListNetworks(w http.ResponseWriter, r *http.Request) {
@@ -91,6 +96,79 @@ func DeleteNetwork(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	hr.JSON(http.StatusOK, network)
+}
+
+func GetNetworkIPRanges(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	network, ok := getNetworkHelper(hr, r)
+	if !ok {
+		return
+	}
+	if err := network.LoadIPRanges(); err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, network.IPRanges)
+}
+
+func SetNetworkIPRanges(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	network, ok := getNetworkHelper(hr, r)
+	if !ok {
+		return
+	}
+	var iprangeIDs []string
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&iprangeIDs); err != nil {
+		hr.JSONMsg(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	ipranges := make([]*models.IPRange, len(iprangeIDs))
+	for i, v := range iprangeIDs {
+		ipranges[i] = &models.IPRange{ID: v}
+	}
+
+	if err := network.SetIPRanges(ipranges); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	hr.JSON(http.StatusOK, network.IPRanges)
+}
+
+func AddNetworkIPRange(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	network, ok := getNetworkHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	iprangeID, ok := vars["iprangeID"]
+
+	if err := network.AddIPRange(&models.IPRange{ID: iprangeID}); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusCreated, &struct{}{})
+}
+
+func RemoveNetworkIPRange(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	network, ok := getNetworkHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	iprangeID, ok := vars["iprangeID"]
+
+	if err := network.RemoveIPRange(&models.IPRange{ID: iprangeID}); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusOK, &struct{}{})
 }
 
 func getNetworkHelper(hr HTTPResponse, r *http.Request) (*models.Network, bool) {

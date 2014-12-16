@@ -21,6 +21,9 @@ func RegisterIPRangeRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{iprangeID}/hypervisors", SetIPRangeHypervisors).Methods("PUT")
 	sub.HandleFunc("/{iprangeID}/hypervisors/{hypervisorID}", AddIPRangeHypervisor).Methods("PUT")
 	sub.HandleFunc("/{iprangeID}/hypervisors/{hypervisorID}", RemoveIPRangeHypervisor).Methods("DELETE")
+	sub.HandleFunc("/{iprangeID}/network", GetIPRangeNetwork).Methods("GET")
+	sub.HandleFunc("/{iprangeID}/network/{networkID}", SetIPRangeNetwork).Methods("PUT")
+	sub.HandleFunc("/{iprangeID}/network/{networkID}", RemoveIPRangeNetwork).Methods("DELETE")
 }
 
 func ListIPRanges(w http.ResponseWriter, r *http.Request) {
@@ -165,6 +168,53 @@ func RemoveIPRangeHypervisor(w http.ResponseWriter, r *http.Request) {
 	hypervisorID, ok := vars["hypervisorID"]
 
 	if err := iprange.RemoveHypervisor(&models.Hypervisor{ID: hypervisorID}); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusOK, &struct{}{})
+}
+
+func GetIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	iprange, ok := getIPRangeHelper(hr, r)
+	if !ok {
+		return
+	}
+	if err := iprange.LoadNetwork(); err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, iprange.Network)
+}
+
+func SetIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	iprange, ok := getIPRangeHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	networkID, ok := vars["networkID"]
+
+	if err := iprange.SetNetwork(&models.Network{ID: networkID}); err != nil {
+		hr.JSONMsg(http.StatusInternalServerError, err.Error())
+		return
+	}
+	hr.JSON(http.StatusCreated, &struct{}{})
+}
+
+func RemoveIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	iprange, ok := getIPRangeHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	networkID, ok := vars["networkID"]
+
+	if err := iprange.RemoveNetwork(&models.Network{ID: networkID}); err != nil {
 		hr.JSONMsg(http.StatusInternalServerError, err.Error())
 		return
 	}

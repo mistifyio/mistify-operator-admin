@@ -14,6 +14,7 @@ type Network struct {
 	ID       string            `json:"id"`
 	Name     string            `json:"name"`
 	Metadata map[string]string `json:"metadata"`
+	IPRanges []*IPRange        `json:"-"`
 }
 
 func (network *Network) id() string {
@@ -142,6 +143,37 @@ func (network *Network) Decode(data io.Reader) error {
 	return nil
 }
 
+func (network *Network) LoadIPRanges() error {
+	ipranges, err := IPRangesByNetwork(network)
+	if err != nil {
+		return err
+	}
+	network.IPRanges = ipranges
+	return nil
+}
+
+func (network *Network) AddIPRange(iprange *IPRange) error {
+	return AddRelation("iprange_networks", network, iprange)
+}
+
+func (network *Network) RemoveIPRange(iprange *IPRange) error {
+	return RemoveRelation("iprange_networks", network, iprange)
+}
+
+func (network *Network) SetIPRanges(ipranges []*IPRange) error {
+	if len(ipranges) == 0 {
+		return ClearRelations("iprange_networks", network)
+	}
+	relatables := make([]relatable, len(ipranges))
+	for i, iprange := range ipranges {
+		relatables[i] = relatable(iprange)
+	}
+	if err := SetRelations("iprange_networks", network, relatables); err != nil {
+		return err
+	}
+	return network.LoadIPRanges()
+}
+
 func (network *Network) NewID() string {
 	network.ID = uuid.New()
 	return network.ID
@@ -179,6 +211,43 @@ func ListNetworks() ([]*Network, error) {
 	if err != nil {
 		return nil, err
 	}
+	networks, err := networksFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+	return networks, nil
+}
+
+func NetworksByIPRange(iprange *IPRange) ([]*Network, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT n.network_id, n.name, n.metadata
+	FROM networks n
+	JOIN iprange_networks i_n ON n.network_id = i_n.network_id
+	WHERE i_n.iprange_id = $1
+	ORDER BY n.network_id asc
+	`
+	rows, err := d.Query(sql, iprange.ID)
+	if err != nil {
+		return nil, err
+	}
+	networks, err := networksFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return networks, nil
+}
+
+func networksFromRows(rows *sql.Rows) ([]*Network, error) {
 	networks := make([]*Network, 0, 1)
 	for rows.Next() {
 		network := &Network{}
@@ -186,9 +255,6 @@ func ListNetworks() ([]*Network, error) {
 			return nil, err
 		}
 		networks = append(networks, network)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
 	}
 	return networks, nil
 }

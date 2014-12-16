@@ -250,6 +250,26 @@ func (iprange *IPRange) SetHypervisors(hypervisors []*Hypervisor) error {
 	return iprange.LoadHypervisors()
 }
 
+func (iprange *IPRange) LoadNetwork() error {
+	networks, err := NetworksByIPRange(iprange)
+	if err != nil {
+		return err
+	}
+	if len(networks) > 0 {
+		iprange.Network = networks[0]
+	}
+	return nil
+}
+func (iprange *IPRange) SetNetwork(network *Network) error {
+	// Only one can be set at a time
+	relatables := make([]relatable, 1)
+	relatables[0] = relatable(network)
+	return SetRelations("iprange_networks", iprange, relatables)
+}
+
+func (iprange *IPRange) RemoveNetwork(network *Network) error {
+	return RemoveRelation("iprange_networks", iprange, network)
+}
 func (iprange *IPRange) NewID() string {
 	iprange.ID = uuid.New()
 	return iprange.ID
@@ -314,6 +334,32 @@ func IPRangesByHypervisor(hypervisor *Hypervisor) ([]*IPRange, error) {
 	ORDER BY i.iprange_id asc
 	`
 	rows, err := d.Query(sql, hypervisor.ID)
+	if err != nil {
+		return nil, err
+	}
+	ipranges, err := iprangesFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return ipranges, nil
+}
+
+func IPRangesByNetwork(network *Network) ([]*IPRange, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT i.iprange_id, i.cidr, i.gateway, i.start_ip, i.end_ip, i.metadata
+	FROM ipranges i
+	JOIN iprange_networks i_n ON i.iprange_id = i_n.iprange_id
+	WHERE i_n.network_id = $1
+	ORDER BY i.iprange_id asc
+	`
+	rows, err := d.Query(sql, network.ID)
 	if err != nil {
 		return nil, err
 	}
