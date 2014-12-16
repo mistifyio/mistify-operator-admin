@@ -13,13 +13,14 @@ import (
 
 type (
 	IPRange struct {
-		ID       string            `json:"id"`
-		CIDR     *net.IPNet        `json:"cidr"`
-		Gateway  net.IP            `json:"gateway"`
-		Start    net.IP            `json:"start"`
-		End      net.IP            `json:"end"`
-		Metadata map[string]string `json:"metadata"`
-		Network  *Network          `json:"-"`
+		ID          string            `json:"id"`
+		CIDR        *net.IPNet        `json:"cidr"`
+		Gateway     net.IP            `json:"gateway"`
+		Start       net.IP            `json:"start"`
+		End         net.IP            `json:"end"`
+		Metadata    map[string]string `json:"metadata"`
+		Network     *Network          `json:"-"`
+		Hypervisors []*Hypervisor     `json:"-"`
 	}
 
 	ipRangeData struct {
@@ -216,6 +217,37 @@ func (iprange *IPRange) Decode(data io.Reader) error {
 		}
 	}
 	return nil
+}
+
+func (iprange *IPRange) LoadHypervisors() error {
+	hypervisors, err := HypervisorsByIPRange(iprange)
+	if err != nil {
+		return err
+	}
+	iprange.Hypervisors = hypervisors
+	return nil
+}
+
+func (iprange *IPRange) AddHypervisor(hypervisor *Hypervisor) error {
+	return AddRelation("hypervisors_ipranges", iprange, hypervisor)
+}
+
+func (iprange *IPRange) RemoveHypervisor(hypervisor *Hypervisor) error {
+	return RemoveRelation("hypervisors_ipranges", iprange, hypervisor)
+}
+
+func (iprange *IPRange) SetHypervisors(hypervisors []*Hypervisor) error {
+	if len(hypervisors) == 0 {
+		return ClearRelations("hypervisors_ipranges", iprange)
+	}
+	relatables := make([]relatable, len(hypervisors))
+	for i, hypervisor := range hypervisors {
+		relatables[i] = relatable(hypervisor)
+	}
+	if err := SetRelations("hypervisors_ipranges", iprange, relatables); err != nil {
+		return err
+	}
+	return iprange.LoadHypervisors()
 }
 
 func (iprange *IPRange) NewID() string {
