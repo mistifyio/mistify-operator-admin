@@ -19,6 +19,14 @@ type User struct {
 	Projects []*Project        `json:"-"`
 }
 
+func (user *User) id() string {
+	return user.ID
+}
+
+func (user *User) pkeyName() string {
+	return "user_id"
+}
+
 func (user *User) Validate() error {
 	if user.ID == "" {
 		return errors.New("missing id")
@@ -147,7 +155,7 @@ func (user *User) Decode(data io.Reader) error {
 }
 
 func (user *User) LoadProjects() error {
-	projects, err := ProjectsByUser(user.ID)
+	projects, err := ProjectsByUser(user)
 	if err != nil {
 		return err
 	}
@@ -155,28 +163,26 @@ func (user *User) LoadProjects() error {
 	return nil
 }
 
-func (user *User) SetProjects(projectIDs []string) error {
-	err := SetUserProjects(user.ID, projectIDs)
-	if err != nil {
+func (user *User) SetProjects(projects []*Project) error {
+	if len(projects) == 0 {
+		return ClearRelations("projects_users", user)
+	}
+	relatables := make([]relatable, len(projects))
+	for i, project := range projects {
+		relatables[i] = relatable(project)
+	}
+	if err := SetRelations("projects_users", user, relatables); err != nil {
 		return err
 	}
 	return user.LoadProjects()
 }
 
-func (user *User) AddProject(projectID string) error {
-	err := AddProjectUser(projectID, user.ID)
-	if err != nil {
-		return err
-	}
-	return user.LoadProjects()
+func (user *User) AddProject(project *Project) error {
+	return AddRelation("projects_users", user, project)
 }
 
-func (user *User) RemoveProject(projectID string) error {
-	err := RemoveProjectUser(projectID, user.ID)
-	if err != nil {
-		return err
-	}
-	return user.LoadProjects()
+func (user *User) RemoveProject(project *Project) error {
+	return RemoveRelation("projects_users", user, project)
 }
 
 func (user *User) NewID() string {
@@ -213,6 +219,32 @@ func ListUsers() ([]*User, error) {
 	ORDER BY user_id asc
 	`
 	rows, err := d.Query(sql)
+	if err != nil {
+		return nil, err
+	}
+	users, err := usersFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
+func UsersByProject(project *Project) ([]*User, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT u.user_id, u.username, u.email
+	FROM users u
+	JOIN projects_users pu ON u.user_id = pu.user_id
+	WHERE pu.project_id = $1
+	ORDER BY u.user_id asc
+	`
+	rows, err := d.Query(sql, project.ID)
 	if err != nil {
 		return nil, err
 	}

@@ -105,8 +105,7 @@ func GetUserProjects(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	err := user.LoadProjects()
-	if err != nil {
+	if err := user.LoadProjects(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
@@ -122,14 +121,17 @@ func SetUserProjects(w http.ResponseWriter, r *http.Request) {
 
 	var projectIDs []string
 	decoder := json.NewDecoder(r.Body)
-	err := decoder.Decode(&projectIDs)
-	if err != nil {
+	if err := decoder.Decode(&projectIDs); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return
 	}
 
-	err = user.SetProjects(projectIDs)
-	if err != nil {
+	projects := make([]*models.Project, len(projectIDs))
+	for i, v := range projectIDs {
+		projects[i] = &models.Project{ID: v}
+	}
+
+	if err := user.SetProjects(projects); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
@@ -146,12 +148,11 @@ func AddUserProject(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 
-	err := user.AddProject(projectID)
-	if err != nil {
+	if err := user.AddProject(&models.Project{ID: projectID}); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
-	hr.JSON(http.StatusOK, user.Projects)
+	hr.JSON(http.StatusOK, &struct{}{})
 }
 
 func RemoveUserProject(w http.ResponseWriter, r *http.Request) {
@@ -164,12 +165,11 @@ func RemoveUserProject(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	projectID := vars["projectID"]
 
-	err := user.RemoveProject(projectID)
-	if err != nil {
+	if err := user.RemoveProject(&models.Project{ID: projectID}); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
-	hr.JSON(http.StatusOK, user.Projects)
+	hr.JSON(http.StatusOK, &struct{}{})
 }
 
 func getUserHelper(hr HttpResponse, r *http.Request) (*models.User, bool) {
