@@ -228,7 +228,10 @@ func (hypervisor *Hypervisor) SetIPRanges(ipranges []*IPRange) error {
 	for i, iprange := range ipranges {
 		relatables[i] = relatable(iprange)
 	}
-	return SetRelations("hypervisors_ipranges", hypervisor, relatables)
+	if err := SetRelations("hypervisors_ipranges", hypervisor, relatables); err != nil {
+		return err
+	}
+	return hypervisor.LoadIPRanges()
 }
 
 func (hypervisor *Hypervisor) NewID() string {

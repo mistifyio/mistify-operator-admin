@@ -19,7 +19,7 @@ func RegisterNetworkRoutes(prefix string, router *mux.Router) {
 }
 
 func ListNetworks(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	networks, err := models.ListNetworks()
 	if err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
@@ -29,7 +29,7 @@ func ListNetworks(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetNetwork(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
 	if !ok {
 		return
@@ -38,7 +38,7 @@ func GetNetwork(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateNetwork(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 
 	// Parse Request
 	network := &models.Network{}
@@ -54,15 +54,14 @@ func CreateNetwork(w http.ResponseWriter, r *http.Request) {
 	}
 	network.NewID()
 
-	ok := saveNetworkHelper(hr, network)
-	if !ok {
+	if !saveNetworkHelper(hr, network) {
 		return
 	}
 	hr.JSON(http.StatusCreated, network)
 }
 
 func UpdateNetwork(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
 	if !ok {
 		return // Specific response handled by getNetworkHelper
@@ -74,29 +73,27 @@ func UpdateNetwork(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = saveNetworkHelper(hr, network)
-	if !ok {
+	if !saveNetworkHelper(hr, network) {
 		return
 	}
 	hr.JSON(http.StatusOK, network)
 }
 
 func DeleteNetwork(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
 	if !ok {
 		return
 	}
 
-	err := network.Delete()
-	if err != nil {
+	if err := network.Delete(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
 	hr.JSON(http.StatusOK, network)
 }
 
-func getNetworkHelper(hr HttpResponse, r *http.Request) (*models.Network, bool) {
+func getNetworkHelper(hr HTTPResponse, r *http.Request) (*models.Network, bool) {
 	vars := mux.Vars(r)
 	networkID, ok := vars["networkID"]
 	if !ok {
@@ -119,15 +116,13 @@ func getNetworkHelper(hr HttpResponse, r *http.Request) (*models.Network, bool) 
 	return network, true
 }
 
-func saveNetworkHelper(hr HttpResponse, network *models.Network) bool {
-	err := network.Validate()
-	if err != nil {
+func saveNetworkHelper(hr HTTPResponse, network *models.Network) bool {
+	if err := network.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return false
 	}
 	// Save
-	err = network.Save()
-	if err != nil {
+	if err := network.Save(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return false
 	}

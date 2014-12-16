@@ -14,11 +14,11 @@ import (
 )
 
 type (
-	HttpResponse struct {
+	HTTPResponse struct {
 		http.ResponseWriter
 	}
 
-	HttpError struct {
+	HTTPError struct {
 		Message string   `json:"message"`
 		Code    int      `json:"code"`
 		Stack   []string `json:"stack"`
@@ -61,7 +61,7 @@ func Run(port uint) error {
 	return server.ListenAndServe()
 }
 
-func (hr *HttpResponse) JSON(code int, obj interface{}) {
+func (hr *HTTPResponse) JSON(code int, obj interface{}) {
 	hr.Header().Set("Content-Type", "application/json")
 	hr.WriteHeader(code)
 	encoder := json.NewEncoder(hr)
@@ -70,8 +70,8 @@ func (hr *HttpResponse) JSON(code int, obj interface{}) {
 	}
 }
 
-func (hr *HttpResponse) JSONError(code int, err error) {
-	httpError := &HttpError{
+func (hr *HTTPResponse) JSONError(code int, err error) {
+	httpError := &HTTPError{
 		Message: err.Error(),
 		Code:    code,
 		Stack:   make([]string, 0, 4),
@@ -87,7 +87,7 @@ func (hr *HttpResponse) JSONError(code int, err error) {
 	hr.JSON(code, httpError)
 }
 
-func (hr *HttpResponse) JSONMsg(code int, msg string) {
+func (hr *HTTPResponse) JSONMsg(code int, msg string) {
 	msgObj := map[string]string{
 		"message": msg,
 	}

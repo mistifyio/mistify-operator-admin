@@ -42,8 +42,7 @@ func (project *Project) Validate() error {
 }
 
 func (project *Project) Save() error {
-	err := project.Validate()
-	if err != nil {
+	if err := project.Validate(); err != nil {
 		return err
 	}
 

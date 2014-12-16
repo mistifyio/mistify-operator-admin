@@ -47,8 +47,7 @@ func (user *User) Validate() error {
 }
 
 func (user *User) Save() error {
-	err := user.Validate()
-	if err != nil {
+	if err := user.Validate(); err != nil {
 		return err
 	}
 

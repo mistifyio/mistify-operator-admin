@@ -24,7 +24,7 @@ func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
 }
 
 func ListHypervisors(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisors, err := models.ListHypervisors()
 	if err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
@@ -34,7 +34,7 @@ func ListHypervisors(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetHypervisor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return
@@ -43,7 +43,7 @@ func GetHypervisor(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateHypervisor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 
 	// Parse Request
 	hypervisor := &models.Hypervisor{}
@@ -59,15 +59,14 @@ func CreateHypervisor(w http.ResponseWriter, r *http.Request) {
 	}
 	hypervisor.NewID()
 
-	ok := saveHypervisorHelper(hr, hypervisor)
-	if !ok {
+	if !saveHypervisorHelper(hr, hypervisor) {
 		return
 	}
 	hr.JSON(http.StatusCreated, hypervisor)
 }
 
 func UpdateHypervisor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return // Specific response handled by getHypervisorHelper
@@ -79,22 +78,20 @@ func UpdateHypervisor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = saveHypervisorHelper(hr, hypervisor)
-	if !ok {
+	if !saveHypervisorHelper(hr, hypervisor) {
 		return
 	}
 	hr.JSON(http.StatusOK, hypervisor)
 }
 
 func DeleteHypervisor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return
 	}
 
-	err := hypervisor.Delete()
-	if err != nil {
+	if err := hypervisor.Delete(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
@@ -102,13 +99,12 @@ func DeleteHypervisor(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return
 	}
-	err := hypervisor.LoadIPRanges()
-	if err != nil {
+	if err := hypervisor.LoadIPRanges(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
@@ -116,7 +112,7 @@ func GetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return
@@ -137,11 +133,12 @@ func SetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
 		hr.JSONMsg(http.StatusInternalServerError, err.Error())
 		return
 	}
-	hr.JSON(http.StatusOK, hypervisor) // TODO: Make this retrieve the new ip set
+
+	hr.JSON(http.StatusOK, hypervisor.IPRanges)
 }
 
 func AddHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return
@@ -154,11 +151,11 @@ func AddHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
 		hr.JSONMsg(http.StatusInternalServerError, err.Error())
 		return
 	}
-	hr.JSON(http.StatusOK, &struct{}{})
+	hr.JSON(http.StatusCreated, &struct{}{})
 }
 
 func RemoveHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
 	if !ok {
 		return
@@ -174,7 +171,7 @@ func RemoveHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
-func getHypervisorHelper(hr HttpResponse, r *http.Request) (*models.Hypervisor, bool) {
+func getHypervisorHelper(hr HTTPResponse, r *http.Request) (*models.Hypervisor, bool) {
 	vars := mux.Vars(r)
 	hypervisorID, ok := vars["hypervisorID"]
 	if !ok {
@@ -197,15 +194,13 @@ func getHypervisorHelper(hr HttpResponse, r *http.Request) (*models.Hypervisor, 
 	return hypervisor, true
 }
 
-func saveHypervisorHelper(hr HttpResponse, hypervisor *models.Hypervisor) bool {
-	err := hypervisor.Validate()
-	if err != nil {
+func saveHypervisorHelper(hr HTTPResponse, hypervisor *models.Hypervisor) bool {
+	if err := hypervisor.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return false
 	}
 	// Save
-	err = hypervisor.Save()
-	if err != nil {
+	if err := hypervisor.Save(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return false
 	}

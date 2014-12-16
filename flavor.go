@@ -19,7 +19,7 @@ func RegisterFlavorRoutes(prefix string, router *mux.Router) {
 }
 
 func ListFlavors(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	flavors, err := models.ListFlavors()
 	if err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
@@ -29,7 +29,7 @@ func ListFlavors(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetFlavor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	flavor, ok := getFlavorHelper(hr, r)
 	if !ok {
 		return
@@ -38,7 +38,7 @@ func GetFlavor(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateFlavor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 
 	// Parse Request
 	flavor := &models.Flavor{}
@@ -54,15 +54,14 @@ func CreateFlavor(w http.ResponseWriter, r *http.Request) {
 	}
 	flavor.NewID()
 
-	ok := saveFlavorHelper(hr, flavor)
-	if !ok {
+	if !saveFlavorHelper(hr, flavor) {
 		return
 	}
 	hr.JSON(http.StatusCreated, flavor)
 }
 
 func UpdateFlavor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	flavor, ok := getFlavorHelper(hr, r)
 	if !ok {
 		return // Specific response handled by getFlavorHelper
@@ -74,29 +73,27 @@ func UpdateFlavor(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = saveFlavorHelper(hr, flavor)
-	if !ok {
+	if !saveFlavorHelper(hr, flavor) {
 		return
 	}
 	hr.JSON(http.StatusOK, flavor)
 }
 
 func DeleteFlavor(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	flavor, ok := getFlavorHelper(hr, r)
 	if !ok {
 		return
 	}
 
-	err := flavor.Delete()
-	if err != nil {
+	if err := flavor.Delete(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
 	hr.JSON(http.StatusOK, flavor)
 }
 
-func getFlavorHelper(hr HttpResponse, r *http.Request) (*models.Flavor, bool) {
+func getFlavorHelper(hr HTTPResponse, r *http.Request) (*models.Flavor, bool) {
 	vars := mux.Vars(r)
 	flavorID, ok := vars["flavorID"]
 	if !ok {
@@ -119,15 +116,13 @@ func getFlavorHelper(hr HttpResponse, r *http.Request) (*models.Flavor, bool) {
 	return flavor, true
 }
 
-func saveFlavorHelper(hr HttpResponse, flavor *models.Flavor) bool {
-	err := flavor.Validate()
-	if err != nil {
+func saveFlavorHelper(hr HTTPResponse, flavor *models.Flavor) bool {
+	if err := flavor.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return false
 	}
 	// Save
-	err = flavor.Save()
-	if err != nil {
+	if err := flavor.Save(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return false
 	}

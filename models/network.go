@@ -41,8 +41,7 @@ func (network *Network) Validate() error {
 }
 
 func (network *Network) Save() error {
-	err := network.Validate()
-	if err != nil {
+	if err := network.Validate(); err != nil {
 		return err
 	}
 	d, err := db.Connect(nil)

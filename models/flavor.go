@@ -45,8 +45,7 @@ func (flavor *Flavor) Validate() error {
 }
 
 func (flavor *Flavor) Save() error {
-	err := flavor.Validate()
-	if err != nil {
+	if err := flavor.Validate(); err != nil {
 		return err
 	}
 

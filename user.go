@@ -23,7 +23,7 @@ func RegisterUserRoutes(prefix string, router *mux.Router) {
 }
 
 func ListUsers(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	users, err := models.ListUsers()
 	if err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
@@ -33,7 +33,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetUser(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return
@@ -42,7 +42,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateUser(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 
 	// Parse Request
 	user := &models.User{}
@@ -58,15 +58,14 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	}
 	user.NewID()
 
-	ok := saveUserHelper(hr, user)
-	if !ok {
+	if !saveUserHelper(hr, user) {
 		return
 	}
 	hr.JSON(http.StatusCreated, user)
 }
 
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return // Specific response handled by getUserHelper
@@ -78,29 +77,28 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = saveUserHelper(hr, user)
-	if !ok {
+	if !saveUserHelper(hr, user) {
 		return
 	}
 	hr.JSON(http.StatusOK, user)
 }
 
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return
 	}
 
-	err := user.Delete()
-	if err != nil {
+	if err := user.Delete(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
+		return
 	}
 	hr.JSON(http.StatusOK, user)
 }
 
 func GetUserProjects(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return
@@ -113,7 +111,7 @@ func GetUserProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func SetUserProjects(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return
@@ -139,7 +137,7 @@ func SetUserProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func AddUserProject(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return
@@ -156,7 +154,7 @@ func AddUserProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func RemoveUserProject(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
 	if !ok {
 		return
@@ -172,7 +170,7 @@ func RemoveUserProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
-func getUserHelper(hr HttpResponse, r *http.Request) (*models.User, bool) {
+func getUserHelper(hr HTTPResponse, r *http.Request) (*models.User, bool) {
 	vars := mux.Vars(r)
 	userID, ok := vars["userID"]
 	if !ok {
@@ -195,15 +193,13 @@ func getUserHelper(hr HttpResponse, r *http.Request) (*models.User, bool) {
 	return user, true
 }
 
-func saveUserHelper(hr HttpResponse, user *models.User) bool {
-	err := user.Validate()
-	if err != nil {
+func saveUserHelper(hr HTTPResponse, user *models.User) bool {
+	if err := user.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return false
 	}
 	// Save
-	err = user.Save()
-	if err != nil {
+	if err := user.Save(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return false
 	}

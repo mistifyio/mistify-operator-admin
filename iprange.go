@@ -19,7 +19,7 @@ func RegisterIPRangeRoutes(prefix string, router *mux.Router) {
 }
 
 func ListIPRanges(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	ipranges, err := models.ListIPRanges()
 	if err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
@@ -29,7 +29,7 @@ func ListIPRanges(w http.ResponseWriter, r *http.Request) {
 }
 
 func GetIPRange(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
 	if !ok {
 		return
@@ -38,7 +38,7 @@ func GetIPRange(w http.ResponseWriter, r *http.Request) {
 }
 
 func CreateIPRange(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 
 	// Parse Request
 	iprange := &models.IPRange{}
@@ -54,15 +54,14 @@ func CreateIPRange(w http.ResponseWriter, r *http.Request) {
 	}
 	iprange.NewID()
 
-	ok := saveIPRangeHelper(hr, iprange)
-	if !ok {
+	if !saveIPRangeHelper(hr, iprange) {
 		return
 	}
 	hr.JSON(http.StatusCreated, iprange)
 }
 
 func UpdateIPRange(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
 	if !ok {
 		return // Specific response handled by getIPRangeHelper
@@ -74,29 +73,27 @@ func UpdateIPRange(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ok = saveIPRangeHelper(hr, iprange)
-	if !ok {
+	if !saveIPRangeHelper(hr, iprange) {
 		return
 	}
 	hr.JSON(http.StatusOK, iprange)
 }
 
 func DeleteIPRange(w http.ResponseWriter, r *http.Request) {
-	hr := HttpResponse{w}
+	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
 	if !ok {
 		return
 	}
 
-	err := iprange.Delete()
-	if err != nil {
+	if err := iprange.Delete(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}
 	hr.JSON(http.StatusOK, iprange)
 }
 
-func getIPRangeHelper(hr HttpResponse, r *http.Request) (*models.IPRange, bool) {
+func getIPRangeHelper(hr HTTPResponse, r *http.Request) (*models.IPRange, bool) {
 	vars := mux.Vars(r)
 	iprangeID, ok := vars["iprangeID"]
 	if !ok {
@@ -119,15 +116,13 @@ func getIPRangeHelper(hr HttpResponse, r *http.Request) (*models.IPRange, bool) 
 	return iprange, true
 }
 
-func saveIPRangeHelper(hr HttpResponse, iprange *models.IPRange) bool {
-	err := iprange.Validate()
-	if err != nil {
+func saveIPRangeHelper(hr HTTPResponse, iprange *models.IPRange) bool {
+	if err := iprange.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())
 		return false
 	}
 	// Save
-	err = iprange.Save()
-	if err != nil {
+	if err := iprange.Save(); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return false
 	}
