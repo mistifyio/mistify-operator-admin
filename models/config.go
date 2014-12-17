@@ -33,10 +33,10 @@ func (config *Config) Validate() error {
 func (config *Config) Get() *map[string]map[string]string {
 	data := make(map[string]map[string]string)
 	defaultConfig := conf.Get().Mistify
-	for namespace, _ := range defaultConfig {
+	for namespace := range defaultConfig {
 		data[namespace] = config.GetNamespace(namespace)
 	}
-	for namespace, _ := range config.data {
+	for namespace := range config.data {
 		if _, ok := data[namespace]; !ok {
 			data[namespace] = config.GetNamespace(namespace)
 		}
@@ -65,6 +65,7 @@ func (config *Config) GetNamespace(namespace string) map[string]string {
 	return ns
 }
 
+// SetNamespace places a set of key/value pairs under a given namespace
 func (config *Config) SetNamespace(namespace string, value map[string]string) {
 	if value == nil {
 		config.DeleteNamespace(namespace)
