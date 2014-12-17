@@ -9,9 +9,12 @@ import (
 
 var conf *Config
 
-type Config struct {
-	DB DB `json:"db"`
-}
+type (
+	Config struct {
+		DB      DB                           `json:"db"`
+		Mistify map[string]map[string]string `json:"mistify"`
+	}
+)
 
 func Load(path string) error {
 	data, err := ioutil.ReadFile(path)

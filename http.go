@@ -51,7 +51,7 @@ func Run(port uint) error {
 	RegisterProjectRoutes("/projects", router)
 	RegisterUserRoutes("/users", router)
 	RegisterFlavorRoutes("/flavors", router)
-	// generalConfig.RegisterHandlers(r)
+	RegisterConfigRoutes("/config", router)
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
