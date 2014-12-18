@@ -127,7 +127,7 @@ func (iprange *IPRange) Save() error {
 			metadata = nv.metadata
 		FROM new_values nv
 		WHERE i.iprange_id = nv.iprange_id
-		RETURNING i.network_id
+		RETURNING i.iprange_id
 	)
 	INSERT INTO ipranges
 		(iprange_id, cidr, gateway, start_ip, end_ip, metadata)
