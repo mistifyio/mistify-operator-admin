@@ -187,66 +187,51 @@ func (config *Config) Save() error {
 		return err
 	}
 
-	// Writable CTE to upsert and delete
-	// Upset the currently set namespaces
-	// Delete any namespaces that are no longer set
-	// See: http://stackoverflow.com/a/8702291
-	// And: http://dba.stackexchange.com/a/78535
+	// Clearing and rebuilding the table
+	// If we need accurate auditing, switch from a txn to a writable CTE
+	// that handles updates/inserts/deletes more granularly
+	txn, err := d.Begin()
+	if err != nil {
+		return err
+	}
+
+	// Clear the table
+	if _, err := txn.Exec("TRUNCATE config"); err != nil {
+		txn.Rollback()
+		return err
+	}
+
+	// Commit if we don't have anything to save
+	if len(config.data) == 0 {
+		return txn.Commit()
+	}
 
 	// Build the variable length values sql and vars array
-	values := ""
-	vars := make([]interface{}, len(config.data)*2)
-	if len(config.data) == 0 {
-		// Hacky way to set the "contents" of the new_values CTE and give the
-		// columns appropriate types when there are no rows to update or insert
-		values = "SELECT namespace, data FROM config WHERE 1=2"
-	} else {
-		// Add the appropriately numbered placeholders and corresponding vars
-		values = "VALUES "
-		placeholders := make([]string, len(config.data))
-		i := 0
-		for namespace, data := range config.data {
-			placeholders[i] = fmt.Sprintf("($%d, $%d::json)", (i*2)+1, (i*2)+2)
-			vars[(2 * i)] = interface{}(namespace)
-			dataJSON, err := json.Marshal(data)
-			if err != nil {
-				return err
-			}
-			vars[(2*i)+1] = interface{}(string(dataJSON))
-			i++
+	placeholders := make([]string, len(config.data))
+	values := make([]interface{}, len(config.data)*2)
+	i := 0
+	for namespace, data := range config.data {
+		placeholders[i] = fmt.Sprintf("($%d, $%d::json)", (i*2)+1, (i*2)+2)
+		dataJSON, err := json.Marshal(data)
+		if err != nil {
+			txn.Rollback()
+			return err
 		}
-		values += strings.Join(placeholders, ",")
+		values[2*i] = interface{}(namespace)
+		values[(2*i)+1] = interface{}(string(dataJSON))
+		i++
 	}
 	sql := `
-	-- Rows to be updated or inserted
-	WITH new_values (namespace, data) AS (
-		%s
-	),
-	-- Update existing rows with new values
-	updates as (
-		UPDATE config c SET
-			data = nv.data
-		FROM new_values nv
-		WHERE c.namespace = nv.namespace
-		RETURNING nv.namespace
-	),
-	-- Insert new rows
-	inserts as (
-		INSERT INTO config
-			(namespace, data)
-		SELECT namespace, data
-		FROM new_values nv
-		-- Ignore rows that caused updates
-		WHERE NOT EXISTS (SELECT 1 FROM updates u WHERE nv.namespace = u.namespace)
-		RETURNING namespace
-	)
-	-- Delete everything else
-	DELETE FROM config c
-	WHERE NOT EXISTS ( SELECT 1 FROM new_values nv WHERE c.namespace = nv.namespace)
+	INSERT INTO config
+		(namespace, data)
+	VALUES
 	`
-	sql = fmt.Sprintf(sql, values)
-	_, err = d.Exec(sql, vars...)
-	return err
+	sql += strings.Join(placeholders, ",")
+	if _, err = txn.Exec(sql, values...); err != nil {
+		txn.Rollback()
+		return err
+	}
+	return txn.Commit()
 }
 
 // NewConfig creates a new Config instance and initializes the internal data map
