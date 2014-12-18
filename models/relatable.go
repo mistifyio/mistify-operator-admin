@@ -2,6 +2,7 @@ package models
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
@@ -52,44 +53,50 @@ func SetRelations(tableName string, r1 relatable, r2s []relatable) error {
 		return err
 	}
 
-	if len(r2s) == 0 {
-		return nil
-	}
-
-	values := ""
-	vars := make([]interface{}, len(r2s)+1)
-	vars[0] = r1.id()
-	values += "VALUES "
-	for i, r2 := range r2s {
-		values += fmt.Sprintf("($1::uuid, $%d::uuid)", i+2)
-		vars[i+1] = interface{}(r2.id())
+	// Clear and set relations
+	// If we ever need auditing, switch from a txn to a writable CTE
+	// that handles deletes/inserts more granularly
+	txn, err := d.Begin()
+	if err != nil {
+		return err
 	}
 
 	r1pkey := r1.pkeyName()
+
+	deleteSQL := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", tableName, r1pkey)
+	if _, err := txn.Exec(deleteSQL, r1.id()); err != nil {
+		txn.Rollback()
+		return err
+	}
+
+	if len(r2s) == 0 {
+		txn.Commit()
+		return err
+	}
+
 	r2pkey := r2s[0].pkeyName()
 
+	placeholders := make([]string, len(r2s))
+	values := make([]interface{}, len(r2s)+1)
+	values[0] = r1.id()
+	for i, r2 := range r2s {
+		placeholders[i] = fmt.Sprintf("($1::uuid, $%d::uuid)", i+2)
+		values[i+1] = interface{}(r2.id())
+	}
+
 	sql := `
-	WITH deletes AS (
-		DELETE FROM %s
-		WHERE %s = $1
-	),
-	new_values (%s, %s) AS (
-		%s
-	)
 	INSERT INTO %s (%s, %s)
-	SELECT %s, %s
-	FROM new_values
+	VALUES %s
 	`
 	sql = fmt.Sprintf(sql,
-		tableName,
-		r1pkey,
-		r1pkey, r2pkey,
-		values,
 		tableName, r1pkey, r2pkey,
-		r1pkey, r2pkey,
+		strings.Join(placeholders, ","),
 	)
-	_, err = d.Exec(sql, vars...)
-	return err
+	if _, err = txn.Exec(sql, values...); err != nil {
+		txn.Rollback()
+		return err
+	}
+	return txn.Commit()
 }
 
 func ClearRelations(tableName string, r1 relatable) error {
