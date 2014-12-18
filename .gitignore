@@ -27,3 +27,4 @@ _testmain.go
 .vagrant
 
 cmd/mistify-operator-admin/mistify-operator-admin
+cmd/mistify-operator-admin/conf.json

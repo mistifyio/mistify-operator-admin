@@ -10,6 +10,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterHypervisorRoutes registers the hypervisor routes and handlers
 func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, ListHypervisors).Methods("GET")
 	router.HandleFunc(prefix, CreateHypervisor).Methods("POST")
@@ -23,6 +24,7 @@ func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", RemoveHypervisorIPRange).Methods("DELETE")
 }
 
+// ListHypervisors gets a list of all hypervisors
 func ListHypervisors(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisors, err := models.ListHypervisors()
@@ -33,6 +35,7 @@ func ListHypervisors(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, hypervisors)
 }
 
+// GetHypervisor gets a particular hypervisor
 func GetHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -42,6 +45,7 @@ func GetHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, hypervisor)
 }
 
+// CreateHypervisor creates a new hypervisor
 func CreateHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -65,6 +69,7 @@ func CreateHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, hypervisor)
 }
 
+// UpdateHypervisor updates an existing hypervisor
 func UpdateHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -84,6 +89,7 @@ func UpdateHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, hypervisor)
 }
 
+// DeleteHypervisor deletes an existing hypervisor
 func DeleteHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -98,6 +104,7 @@ func DeleteHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, hypervisor)
 }
 
+// GetHypervisorIPRanges gets a list of ipranges associated with the hypervisor
 func GetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -111,6 +118,8 @@ func GetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, hypervisor.IPRanges)
 }
 
+// SetHypervisorIPRanges sets the list of ipranges associated with the
+// hypervisor
 func SetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -137,6 +146,7 @@ func SetHypervisorIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, hypervisor.IPRanges)
 }
 
+// AddHypervisorIPRange associates an iprange with the hypervisor
 func AddHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -154,6 +164,8 @@ func AddHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, &struct{}{})
 }
 
+// RemoveHypervisorIPRange removes an association of an iprange with the
+// hypervisor
 func RemoveHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	hypervisor, ok := getHypervisorHelper(hr, r)
@@ -171,6 +183,8 @@ func RemoveHypervisorIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// getHypervisorHelper gets the hypervisor object and handles sending a response
+// in case of error
 func getHypervisorHelper(hr HTTPResponse, r *http.Request) (*models.Hypervisor, bool) {
 	vars := mux.Vars(r)
 	hypervisorID, ok := vars["hypervisorID"]
@@ -194,6 +208,8 @@ func getHypervisorHelper(hr HTTPResponse, r *http.Request) (*models.Hypervisor, 
 	return hypervisor, true
 }
 
+// saveHypervisorHelper saves the hypervisor object and handles sending a
+// response in case of error
 func saveHypervisorHelper(hr HTTPResponse, hypervisor *models.Hypervisor) bool {
 	if err := hypervisor.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

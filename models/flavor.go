@@ -1,3 +1,6 @@
+// Package models provides an interface for persisting and retrieving data
+// to and from the database, as well as JSON marshalling/unmarshalling aids for
+// such data.
 package models
 
 import (
@@ -10,6 +13,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
+// Flavor describes a unit of resources, similar to an AWS EC2 type
 type Flavor struct {
 	ID       string            `json:"id"`
 	Name     string            `json:"name"`
@@ -19,6 +23,7 @@ type Flavor struct {
 	Metadata map[string]string `json:"metadata"`
 }
 
+// Validate ensures the flavor properties are set correctly
 func (flavor *Flavor) Validate() error {
 	if flavor.ID == "" {
 		return errors.New("missing id")
@@ -44,6 +49,7 @@ func (flavor *Flavor) Validate() error {
 	return nil
 }
 
+// Save persists a flavor to the database
 func (flavor *Flavor) Save() error {
 	if err := flavor.Validate(); err != nil {
 		return err
@@ -92,6 +98,7 @@ func (flavor *Flavor) Save() error {
 	return err
 }
 
+// Delete removes a flavor from the database
 func (flavor *Flavor) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -102,6 +109,7 @@ func (flavor *Flavor) Delete() error {
 	return err
 }
 
+// Load retrieves a flavor from the database
 func (flavor *Flavor) Load() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -124,6 +132,7 @@ func (flavor *Flavor) Load() error {
 	return rows.Err()
 }
 
+// fromRows unmarshals a database query result row into the flavor object
 func (flavor *Flavor) fromRows(rows *sql.Rows) error {
 	var metadata string
 	err := rows.Scan(
@@ -140,6 +149,7 @@ func (flavor *Flavor) fromRows(rows *sql.Rows) error {
 	return json.Unmarshal([]byte(metadata), &flavor.Metadata)
 }
 
+// Decode unmarshals JSON into the flavor object
 func (flavor *Flavor) Decode(data io.Reader) error {
 	if err := json.NewDecoder(data).Decode(flavor); err != nil {
 		return err
@@ -156,11 +166,13 @@ func (flavor *Flavor) Decode(data io.Reader) error {
 	return nil
 }
 
+// NewID generates a new uuid ID
 func (flavor *Flavor) NewID() string {
 	flavor.ID = uuid.New()
 	return flavor.ID
 }
 
+// NewFlavor creates and initializes a new flavor object
 func NewFlavor() *Flavor {
 	flavor := &Flavor{
 		ID:       uuid.New(),
@@ -169,6 +181,7 @@ func NewFlavor() *Flavor {
 	return flavor
 }
 
+// FetchFlavor retrieves a flavor object from the database by ID
 func FetchFlavor(id string) (*Flavor, error) {
 	flavor := &Flavor{
 		ID: id,
@@ -179,6 +192,7 @@ func FetchFlavor(id string) (*Flavor, error) {
 	return flavor, nil
 }
 
+// ListFlavors retrieves an array of all flavor objects from the database
 func ListFlavors() ([]*Flavor, error) {
 	d, err := db.Connect(nil)
 	if err != nil {

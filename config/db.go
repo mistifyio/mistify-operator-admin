@@ -6,10 +6,11 @@ import (
 )
 
 // Available drivers
-var drivers map[string]bool = map[string]bool{
+var drivers = map[string]bool{
 	"postgres": true,
 }
 
+// DB is the JSON structure and validation for database configuration
 type DB struct {
 	Driver   string `json:"driver"`
 	Database string `json:"database"`
@@ -19,6 +20,7 @@ type DB struct {
 	Port     uint   `json:"port"`
 }
 
+// Validate ensures that the database configuration is reasonable
 func (db *DB) Validate() error {
 	if _, ok := drivers[db.Driver]; !ok {
 		return fmt.Errorf("'%s': not an available database driver", db.Driver)
@@ -38,6 +40,8 @@ func (db *DB) Validate() error {
 	return nil
 }
 
+// DataSourceName generates the dsn for connecting to the database from the
+// configured values
 func (db *DB) DataSourceName() string {
 	return fmt.Sprintf("%s://%s:%s@%s:%d/%s",
 		db.Driver,

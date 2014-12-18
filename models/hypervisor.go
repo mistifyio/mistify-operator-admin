@@ -13,6 +13,7 @@ import (
 )
 
 type (
+	// Hypervisor describes a machine where guests will be running
 	Hypervisor struct {
 		ID       string            `json:"id"`
 		MAC      net.HardwareAddr  `json:"mac"`
@@ -21,6 +22,7 @@ type (
 		IPRanges []*IPRange        `json:"-"`
 	}
 
+	// hypervisorData is a middle-man for JSON and database (un)marshalling
 	hypervisorData struct {
 		ID       string            `json:"id"`
 		MAC      string            `json:"mac"`
@@ -29,14 +31,18 @@ type (
 	}
 )
 
+// id returns the id, required by the relatable interface
 func (hypervisor *Hypervisor) id() string {
 	return hypervisor.ID
 }
 
+// pkeyName returns the database primary key name, required by the relatable
+// interface
 func (hypervisor *Hypervisor) pkeyName() string {
 	return "hypervisor_id"
 }
 
+// importData unmarshals the middle-man structure into a hypervisor object
 func (hypervisor *Hypervisor) importData(data *hypervisorData) error {
 	mac, err := net.ParseMAC(data.MAC)
 	if err != nil {
@@ -49,6 +55,7 @@ func (hypervisor *Hypervisor) importData(data *hypervisorData) error {
 	return nil
 }
 
+// exportData marshals the hypervisor object into the middle-man structure
 func (hypervisor *Hypervisor) exportData() *hypervisorData {
 	return &hypervisorData{
 		ID:       hypervisor.ID,
@@ -58,6 +65,7 @@ func (hypervisor *Hypervisor) exportData() *hypervisorData {
 	}
 }
 
+// UnmarshalJSON unmarshals JSON into a hypervisor
 func (hypervisor *Hypervisor) UnmarshalJSON(b []byte) error {
 	data := &hypervisorData{}
 	if err := json.Unmarshal(b, data); err != nil {
@@ -69,10 +77,12 @@ func (hypervisor *Hypervisor) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON marshals a hypervisor into JSON
 func (hypervisor Hypervisor) MarshalJSON() ([]byte, error) {
 	return json.Marshal(hypervisor.exportData())
 }
 
+// Validate ensures the hypervisor properties are set correctly
 func (hypervisor *Hypervisor) Validate() error {
 	if hypervisor.ID == "" {
 		return errors.New("missing id")
@@ -92,6 +102,7 @@ func (hypervisor *Hypervisor) Validate() error {
 	return nil
 }
 
+// Save persists a hypervisor to the database
 func (hypervisor *Hypervisor) Save() error {
 	if err := hypervisor.Validate(); err != nil {
 		return err
@@ -137,6 +148,7 @@ func (hypervisor *Hypervisor) Save() error {
 	return err
 }
 
+// Delete removes a hypervisor from the database
 func (hypervisor *Hypervisor) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -147,6 +159,7 @@ func (hypervisor *Hypervisor) Delete() error {
 	return err
 }
 
+// Load retrieves a hypervisor from the database
 func (hypervisor *Hypervisor) Load() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -169,6 +182,7 @@ func (hypervisor *Hypervisor) Load() error {
 	return rows.Err()
 }
 
+// fromRows unmarshals a database query result row into the hypervisor object
 func (hypervisor *Hypervisor) fromRows(rows *sql.Rows) error {
 	var metadata string
 	data := &hypervisorData{}
@@ -187,6 +201,7 @@ func (hypervisor *Hypervisor) fromRows(rows *sql.Rows) error {
 	return hypervisor.importData(data)
 }
 
+// Decode unmarshals JSON into the flavor object
 func (hypervisor *Hypervisor) Decode(data io.Reader) error {
 	if err := json.NewDecoder(data).Decode(hypervisor); err != nil {
 		return err
@@ -203,6 +218,7 @@ func (hypervisor *Hypervisor) Decode(data io.Reader) error {
 	return nil
 }
 
+// LoadIPRanges retrieves all of the ipranges related to the hypervisor
 func (hypervisor *Hypervisor) LoadIPRanges() error {
 	ipranges, err := IPRangesByHypervisor(hypervisor)
 	if err != nil {
@@ -212,14 +228,18 @@ func (hypervisor *Hypervisor) LoadIPRanges() error {
 	return nil
 }
 
+// AddIPRange adds a relation to an iprange
 func (hypervisor *Hypervisor) AddIPRange(iprange *IPRange) error {
 	return AddRelation("hypervisors_ipranges", hypervisor, iprange)
 }
 
+// RemoveIPRange removes a relation with an iprange
 func (hypervisor *Hypervisor) RemoveIPRange(iprange *IPRange) error {
 	return RemoveRelation("hypervisors_ipranges", hypervisor, iprange)
 }
 
+// SetIPRanges creates and ensures the only relations the hypervisor has with
+// ipranges
 func (hypervisor *Hypervisor) SetIPRanges(ipranges []*IPRange) error {
 	if len(ipranges) == 0 {
 		return ClearRelations("hypervisors_ipranges", hypervisor)
@@ -234,11 +254,13 @@ func (hypervisor *Hypervisor) SetIPRanges(ipranges []*IPRange) error {
 	return hypervisor.LoadIPRanges()
 }
 
+// NewID generates a new uuid ID
 func (hypervisor *Hypervisor) NewID() string {
 	hypervisor.ID = uuid.New()
 	return hypervisor.ID
 }
 
+// NewHypervisor creates and initializes a new hypervisor object
 func NewHypervisor() *Hypervisor {
 	hypervisor := &Hypervisor{
 		ID:       uuid.New(),
@@ -247,6 +269,7 @@ func NewHypervisor() *Hypervisor {
 	return hypervisor
 }
 
+// FetchHypervisor retrieves a hypervisor object from the database by ID
 func FetchHypervisor(id string) (*Hypervisor, error) {
 	hypervisor := &Hypervisor{
 		ID: id,
@@ -257,6 +280,8 @@ func FetchHypervisor(id string) (*Hypervisor, error) {
 	return hypervisor, nil
 }
 
+// ListHypervisors retrieves an array of all hypervisor objects from the
+// database
 func ListHypervisors() ([]*Hypervisor, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -285,6 +310,8 @@ func ListHypervisors() ([]*Hypervisor, error) {
 	return hypervisors, nil
 }
 
+// HypervisorsByIPRange retrieves an array of hypervisors associated with an
+// iprange from the database
 func HypervisorsByIPRange(iprange *IPRange) ([]*Hypervisor, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -311,6 +338,7 @@ func HypervisorsByIPRange(iprange *IPRange) ([]*Hypervisor, error) {
 	return hypervisors, nil
 }
 
+// hypervisorsFromRows unmarhsals multiple query rows into an array of hypervisors
 func hypervisorsFromRows(rows *sql.Rows) ([]*Hypervisor, error) {
 	hypervisors := make([]*Hypervisor, 0, 1)
 	for rows.Next() {

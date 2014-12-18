@@ -12,6 +12,7 @@ import (
 )
 
 type (
+	// IPRange describes a segment of IP addresses
 	IPRange struct {
 		ID          string            `json:"id"`
 		CIDR        *net.IPNet        `json:"cidr"`
@@ -23,6 +24,7 @@ type (
 		Hypervisors []*Hypervisor     `json:"-"`
 	}
 
+	// ipRangeData is a middle-man for JSON and database (un)marshalling
 	ipRangeData struct {
 		ID       string            `json:"id"`
 		CIDR     string            `json:"cidr"`
@@ -33,14 +35,18 @@ type (
 	}
 )
 
+// id returns the id, required by the relatable interface
 func (iprange *IPRange) id() string {
 	return iprange.ID
 }
 
+// pkeyName returns the database primary key name, required by the relatable
+// interface
 func (iprange *IPRange) pkeyName() string {
 	return "iprange_id"
 }
 
+// importData unmarshals the middle-man structure into an iprange object
 func (iprange *IPRange) importData(data *ipRangeData) error {
 	_, cidr, err := net.ParseCIDR(data.CIDR)
 	if err != nil {
@@ -55,6 +61,7 @@ func (iprange *IPRange) importData(data *ipRangeData) error {
 	return nil
 }
 
+// exportData marshals the iprange object into the middle-man structure
 func (iprange *IPRange) exportData() *ipRangeData {
 	return &ipRangeData{
 		ID:       iprange.ID,
@@ -66,6 +73,7 @@ func (iprange *IPRange) exportData() *ipRangeData {
 	}
 }
 
+// UnmarshalJSON unmarshals JSON into an iprange object
 func (iprange *IPRange) UnmarshalJSON(b []byte) error {
 	data := &ipRangeData{}
 	if err := json.Unmarshal(b, data); err != nil {
@@ -77,10 +85,12 @@ func (iprange *IPRange) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// MarshalJSON marshals an iprange object into JSON
 func (iprange IPRange) MarshalJSON() ([]byte, error) {
 	return json.Marshal(iprange.exportData())
 }
 
+// Validate ensures the iprange proerties are set correctly
 func (iprange *IPRange) Validate() error {
 	if iprange.ID == "" {
 		return errors.New("missing id")
@@ -103,6 +113,7 @@ func (iprange *IPRange) Validate() error {
 	return nil
 }
 
+// Save persists an iprange to the database
 func (iprange *IPRange) Save() error {
 	if err := iprange.Validate(); err != nil {
 		return err
@@ -151,6 +162,7 @@ func (iprange *IPRange) Save() error {
 	return err
 }
 
+// Delete removes an iprange from the database
 func (iprange *IPRange) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -161,6 +173,7 @@ func (iprange *IPRange) Delete() error {
 	return err
 }
 
+// Load retrieves an iprange from the database
 func (iprange *IPRange) Load() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -183,6 +196,7 @@ func (iprange *IPRange) Load() error {
 	return rows.Err()
 }
 
+// fromRows unmarshals a database query result row into the iprange object
 func (iprange *IPRange) fromRows(rows *sql.Rows) error {
 	var metadata string
 	data := &ipRangeData{}
@@ -203,6 +217,7 @@ func (iprange *IPRange) fromRows(rows *sql.Rows) error {
 	return iprange.importData(data)
 }
 
+// Decode unmarshals JSON into the flavor object
 func (iprange *IPRange) Decode(data io.Reader) error {
 	if err := json.NewDecoder(data).Decode(iprange); err != nil {
 		return err
@@ -219,6 +234,8 @@ func (iprange *IPRange) Decode(data io.Reader) error {
 	return nil
 }
 
+// LoadHypervisors retrieves the hypervisors associated with the iprange from
+// the database
 func (iprange *IPRange) LoadHypervisors() error {
 	hypervisors, err := HypervisorsByIPRange(iprange)
 	if err != nil {
@@ -228,14 +245,18 @@ func (iprange *IPRange) LoadHypervisors() error {
 	return nil
 }
 
+// AddHypervisor adds a relation to a hypervisor
 func (iprange *IPRange) AddHypervisor(hypervisor *Hypervisor) error {
 	return AddRelation("hypervisors_ipranges", iprange, hypervisor)
 }
 
+// RemoveHypervisor removes a relation from a hypervisor
 func (iprange *IPRange) RemoveHypervisor(hypervisor *Hypervisor) error {
 	return RemoveRelation("hypervisors_ipranges", iprange, hypervisor)
 }
 
+// SetHypervisors creates and ensures the only relations the iprange has with
+// hypervisors
 func (iprange *IPRange) SetHypervisors(hypervisors []*Hypervisor) error {
 	if len(hypervisors) == 0 {
 		return ClearRelations("hypervisors_ipranges", iprange)
@@ -250,6 +271,8 @@ func (iprange *IPRange) SetHypervisors(hypervisors []*Hypervisor) error {
 	return iprange.LoadHypervisors()
 }
 
+// LoadNetwork retrieves the network related with the iprange from the
+// database
 func (iprange *IPRange) LoadNetwork() error {
 	networks, err := NetworksByIPRange(iprange)
 	if err != nil {
@@ -260,6 +283,8 @@ func (iprange *IPRange) LoadNetwork() error {
 	}
 	return nil
 }
+
+// SetNetwork sets the related network
 func (iprange *IPRange) SetNetwork(network *Network) error {
 	// Only one can be set at a time
 	relatables := make([]relatable, 1)
@@ -267,14 +292,18 @@ func (iprange *IPRange) SetNetwork(network *Network) error {
 	return SetRelations("iprange_networks", iprange, relatables)
 }
 
+// RemoveNetwork clears the network relation
 func (iprange *IPRange) RemoveNetwork(network *Network) error {
 	return RemoveRelation("iprange_networks", iprange, network)
 }
+
+// NewID generates a new uuid ID
 func (iprange *IPRange) NewID() string {
 	iprange.ID = uuid.New()
 	return iprange.ID
 }
 
+// NewIPRange creates and initializes a new iprange object
 func NewIPRange() *IPRange {
 	iprange := &IPRange{
 		ID:       uuid.New(),
@@ -283,6 +312,7 @@ func NewIPRange() *IPRange {
 	return iprange
 }
 
+// FetchIPRange retrieves an iprange object from the database by ID
 func FetchIPRange(id string) (*IPRange, error) {
 	iprange := &IPRange{
 		ID: id,
@@ -293,6 +323,7 @@ func FetchIPRange(id string) (*IPRange, error) {
 	return iprange, nil
 }
 
+// ListIPRanges retrieves an array of all iprange objects from the database
 func ListIPRanges() ([]*IPRange, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -321,6 +352,8 @@ func ListIPRanges() ([]*IPRange, error) {
 	return ipranges, nil
 }
 
+// IPRangesByHypervisor retrieves an array of iprange objects associated with a
+// hypervisor from the database
 func IPRangesByHypervisor(hypervisor *Hypervisor) ([]*IPRange, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -347,6 +380,8 @@ func IPRangesByHypervisor(hypervisor *Hypervisor) ([]*IPRange, error) {
 	return ipranges, nil
 }
 
+// IPRangesByNetwork retrieves an array of iprange objects associated with a
+// network from the database
 func IPRangesByNetwork(network *Network) ([]*IPRange, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -373,6 +408,7 @@ func IPRangesByNetwork(network *Network) ([]*IPRange, error) {
 	return ipranges, nil
 }
 
+// iprangesFromRows unmarshals multiple query rows into an array of ipranges
 func iprangesFromRows(rows *sql.Rows) ([]*IPRange, error) {
 	ipranges := make([]*IPRange, 0, 1)
 	for rows.Next() {

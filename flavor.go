@@ -9,6 +9,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterFlavorRoutes registers the flavor routes and handlers
 func RegisterFlavorRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, ListFlavors).Methods("GET")
 	router.HandleFunc(prefix, CreateFlavor).Methods("POST")
@@ -18,6 +19,7 @@ func RegisterFlavorRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{flavorID}", DeleteFlavor).Methods("DELETE")
 }
 
+// ListFlavors get a list of all flavors
 func ListFlavors(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	flavors, err := models.ListFlavors()
@@ -28,6 +30,7 @@ func ListFlavors(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, flavors)
 }
 
+// GetFlavor gets a paritcular flavor
 func GetFlavor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	flavor, ok := getFlavorHelper(hr, r)
@@ -37,6 +40,7 @@ func GetFlavor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, flavor)
 }
 
+// CreateFlavor creates a new flavor
 func CreateFlavor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -60,6 +64,7 @@ func CreateFlavor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, flavor)
 }
 
+// UpdateFlavor updates an existing flavor
 func UpdateFlavor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	flavor, ok := getFlavorHelper(hr, r)
@@ -79,6 +84,7 @@ func UpdateFlavor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, flavor)
 }
 
+// DeleteFlavor deletes an existing flavor
 func DeleteFlavor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	flavor, ok := getFlavorHelper(hr, r)
@@ -93,6 +99,8 @@ func DeleteFlavor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, flavor)
 }
 
+// getFlavorHelper gets the flavor object and handles sending a response in case
+// of error
 func getFlavorHelper(hr HTTPResponse, r *http.Request) (*models.Flavor, bool) {
 	vars := mux.Vars(r)
 	flavorID, ok := vars["flavorID"]
@@ -116,6 +124,8 @@ func getFlavorHelper(hr HTTPResponse, r *http.Request) (*models.Flavor, bool) {
 	return flavor, true
 }
 
+// saveFlavorHelper saves the flavor object and handles sending a response in
+// case of error
 func saveFlavorHelper(hr HTTPResponse, flavor *models.Flavor) bool {
 	if err := flavor.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

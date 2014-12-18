@@ -9,6 +9,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterUserRoutes registers the user routes and handlers
 func RegisterUserRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, ListUsers).Methods("GET")
 	router.HandleFunc(prefix, CreateUser).Methods("POST")
@@ -22,6 +23,7 @@ func RegisterUserRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{userID}/projects/{projectID}", RemoveUserProject).Methods("DELETE")
 }
 
+// ListUsers gets a list of all users
 func ListUsers(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	users, err := models.ListUsers()
@@ -32,6 +34,7 @@ func ListUsers(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, users)
 }
 
+// GetUser gets a particular user
 func GetUser(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -41,6 +44,7 @@ func GetUser(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, user)
 }
 
+// CreateUser creates a new user
 func CreateUser(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -64,6 +68,7 @@ func CreateUser(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, user)
 }
 
+// UpdateUser updates an existing user
 func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -83,6 +88,7 @@ func UpdateUser(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, user)
 }
 
+// DeleteUser user deletes an existing user
 func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -97,6 +103,7 @@ func DeleteUser(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, user)
 }
 
+// GetUserProjects gets a list of projects associated with the user
 func GetUserProjects(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -110,6 +117,7 @@ func GetUserProjects(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, user.Projects)
 }
 
+// SetUserProjects sets the list of projects associated with the user
 func SetUserProjects(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -136,6 +144,7 @@ func SetUserProjects(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, user.Projects)
 }
 
+// AddUserProject associates a project with the user
 func AddUserProject(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -153,6 +162,7 @@ func AddUserProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// RemoveUserProject removes an association of a project with the user
 func RemoveUserProject(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	user, ok := getUserHelper(hr, r)
@@ -170,6 +180,8 @@ func RemoveUserProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// getUserHelper gets the user object and handles sending a response in case of
+// error
 func getUserHelper(hr HTTPResponse, r *http.Request) (*models.User, bool) {
 	vars := mux.Vars(r)
 	userID, ok := vars["userID"]
@@ -193,6 +205,8 @@ func getUserHelper(hr HTTPResponse, r *http.Request) (*models.User, bool) {
 	return user, true
 }
 
+// saveUserHelper saves the user object and handles sending a response in case
+// of error
 func saveUserHelper(hr HTTPResponse, user *models.User) bool {
 	if err := user.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

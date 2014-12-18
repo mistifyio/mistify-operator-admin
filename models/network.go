@@ -10,6 +10,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
+// Network describes a set of ipranges
 type Network struct {
 	ID       string            `json:"id"`
 	Name     string            `json:"name"`
@@ -17,14 +18,18 @@ type Network struct {
 	IPRanges []*IPRange        `json:"-"`
 }
 
+// id returns the id, required by the relatable interface
 func (network *Network) id() string {
 	return network.ID
 }
 
+// pkeyName returns the database primary key name, required by the relatable
+// interface
 func (network *Network) pkeyName() string {
 	return "network_id"
 }
 
+// Validate ensures the network properties are set correctly
 func (network *Network) Validate() error {
 	if network.ID == "" {
 		return errors.New("missing id")
@@ -41,6 +46,7 @@ func (network *Network) Validate() error {
 	return nil
 }
 
+// Save persists a network to the database
 func (network *Network) Save() error {
 	if err := network.Validate(); err != nil {
 		return err
@@ -82,6 +88,7 @@ func (network *Network) Save() error {
 	return err
 }
 
+// Delete removes a network from the database
 func (network *Network) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -92,6 +99,7 @@ func (network *Network) Delete() error {
 	return err
 }
 
+// Load retrieves a network from the database
 func (network *Network) Load() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -114,6 +122,7 @@ func (network *Network) Load() error {
 	return rows.Err()
 }
 
+// fromRows unmarshals a database query result row into the network object
 func (network *Network) fromRows(rows *sql.Rows) error {
 	var metadata string
 	err := rows.Scan(
@@ -127,6 +136,7 @@ func (network *Network) fromRows(rows *sql.Rows) error {
 	return json.Unmarshal([]byte(metadata), &network.Metadata)
 }
 
+// Decode unmarshals JSON into the network object
 func (network *Network) Decode(data io.Reader) error {
 	if err := json.NewDecoder(data).Decode(network); err != nil {
 		return err
@@ -143,6 +153,8 @@ func (network *Network) Decode(data io.Reader) error {
 	return nil
 }
 
+// LoadIPRanges retrieves the ipranges associated with the network from the
+// database
 func (network *Network) LoadIPRanges() error {
 	ipranges, err := IPRangesByNetwork(network)
 	if err != nil {
@@ -152,14 +164,18 @@ func (network *Network) LoadIPRanges() error {
 	return nil
 }
 
+// AddIPRange adds a relation to an iprange
 func (network *Network) AddIPRange(iprange *IPRange) error {
 	return AddRelation("iprange_networks", network, iprange)
 }
 
+// RemoveIPRange removes a relation with an iprange
 func (network *Network) RemoveIPRange(iprange *IPRange) error {
 	return RemoveRelation("iprange_networks", network, iprange)
 }
 
+// SetIPRanges creates and ensures the only relations the network has with
+// ipranges
 func (network *Network) SetIPRanges(ipranges []*IPRange) error {
 	if len(ipranges) == 0 {
 		return ClearRelations("iprange_networks", network)
@@ -174,11 +190,13 @@ func (network *Network) SetIPRanges(ipranges []*IPRange) error {
 	return network.LoadIPRanges()
 }
 
+// NewID generates a new uuid ID
 func (network *Network) NewID() string {
 	network.ID = uuid.New()
 	return network.ID
 }
 
+// NewNetwork creates and initializes a new network object
 func NewNetwork() *Network {
 	network := &Network{
 		ID:       uuid.New(),
@@ -187,6 +205,7 @@ func NewNetwork() *Network {
 	return network
 }
 
+// FetchNetwork retrieves a network object from the database by ID
 func FetchNetwork(id string) (*Network, error) {
 	network := &Network{
 		ID: id,
@@ -197,6 +216,7 @@ func FetchNetwork(id string) (*Network, error) {
 	return network, nil
 }
 
+// ListNetworks retrieves an array of all network objects from the database
 func ListNetworks() ([]*Network, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -221,6 +241,8 @@ func ListNetworks() ([]*Network, error) {
 	return networks, nil
 }
 
+// NetworksByIPRange retrieves an array of all network objects associated with
+// an iprange from the database
 func NetworksByIPRange(iprange *IPRange) ([]*Network, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -247,6 +269,7 @@ func NetworksByIPRange(iprange *IPRange) ([]*Network, error) {
 	return networks, nil
 }
 
+// networksFromRows unmarshals multiple query rows into an array of networks
 func networksFromRows(rows *sql.Rows) ([]*Network, error) {
 	networks := make([]*Network, 0, 1)
 	for rows.Next() {

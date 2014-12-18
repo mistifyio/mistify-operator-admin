@@ -10,6 +10,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterNetworkRoutes registers the network routes and handlers
 func RegisterNetworkRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, ListNetworks).Methods("GET")
 	router.HandleFunc(prefix, CreateNetwork).Methods("POST")
@@ -23,6 +24,7 @@ func RegisterNetworkRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", RemoveNetworkIPRange).Methods("DELETE")
 }
 
+// ListNetworks gets a list of all networks
 func ListNetworks(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	networks, err := models.ListNetworks()
@@ -33,6 +35,7 @@ func ListNetworks(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, networks)
 }
 
+// GetNetwork gets a particular network
 func GetNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -42,6 +45,7 @@ func GetNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, network)
 }
 
+// CreateNetwork creates a new network
 func CreateNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -65,6 +69,7 @@ func CreateNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, network)
 }
 
+// UpdateNetwork updates an existing network
 func UpdateNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -84,6 +89,7 @@ func UpdateNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, network)
 }
 
+// DeleteNetwork deletes an existing network
 func DeleteNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -98,6 +104,7 @@ func DeleteNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, network)
 }
 
+// GetNetworkIPRanges gets a list of ipranges associated with the network
 func GetNetworkIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -111,6 +118,7 @@ func GetNetworkIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, network.IPRanges)
 }
 
+// SetNetworkIPRanges sets the list of ipranges associated with the network
 func SetNetworkIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -137,6 +145,7 @@ func SetNetworkIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, network.IPRanges)
 }
 
+// AddNetworkIPRange associates an iprange with the network
 func AddNetworkIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -154,6 +163,7 @@ func AddNetworkIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, &struct{}{})
 }
 
+// RemoveNetworkIPRange removes an association of an iprange with the network
 func RemoveNetworkIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	network, ok := getNetworkHelper(hr, r)
@@ -171,6 +181,8 @@ func RemoveNetworkIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// getNetworkHelper gets the network object and handles sending a response in
+// case of error
 func getNetworkHelper(hr HTTPResponse, r *http.Request) (*models.Network, bool) {
 	vars := mux.Vars(r)
 	networkID, ok := vars["networkID"]
@@ -194,6 +206,8 @@ func getNetworkHelper(hr HTTPResponse, r *http.Request) (*models.Network, bool) 
 	return network, true
 }
 
+// saveNetworkHelper saves the netework object and handles sending a response in
+// case of error
 func saveNetworkHelper(hr HTTPResponse, network *models.Network) bool {
 	if err := network.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

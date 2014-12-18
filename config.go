@@ -8,6 +8,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterConfigRoutes registers the config routes and handlers
 func RegisterConfigRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, GetConfig).Methods("GET")
 	router.HandleFunc(prefix, SetConfig).Methods("PUT")
@@ -20,6 +21,7 @@ func RegisterConfigRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{namespace}/{key}", DeleteConfigKey).Methods("DELETE")
 }
 
+// GetConfig gets the config
 func GetConfig(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	config, ok := getConfigHelper(hr, r)
@@ -29,6 +31,7 @@ func GetConfig(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, config.Get())
 }
 
+// SetConfig sets the config
 func SetConfig(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -44,6 +47,7 @@ func SetConfig(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, config.Get())
 }
 
+// UpdateConfig updates a portion of the config
 func UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	config, ok := getConfigHelper(hr, r)
@@ -62,6 +66,7 @@ func UpdateConfig(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, config.Get())
 }
 
+// GetConfigNamespace gets a particular namespace of the config
 func GetConfigNamespace(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	config, ok := getConfigHelper(hr, r)
@@ -72,6 +77,7 @@ func GetConfigNamespace(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, config.GetNamespace(vars["namespace"]))
 }
 
+// SetConfigNamespace sets the config for a particular namespace
 func SetConfigNamespace(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	config, ok := getConfigHelper(hr, r)
@@ -94,6 +100,7 @@ func SetConfigNamespace(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, config.Get())
 }
 
+// DeleteConfigNamespace removes a particular namespace from the config
 func DeleteConfigNamespace(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	config, ok := getConfigHelper(hr, r)
@@ -111,6 +118,7 @@ func DeleteConfigNamespace(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// DeleteConfigKey deletes a particular key from the config
 func DeleteConfigKey(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	config, ok := getConfigHelper(hr, r)
@@ -128,6 +136,8 @@ func DeleteConfigKey(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// getConfigHelper gets the config object and handles sending a response in case
+// of error
 func getConfigHelper(hr HTTPResponse, r *http.Request) (*models.Config, bool) {
 	config := models.NewConfig()
 	err := config.Load()
@@ -138,6 +148,8 @@ func getConfigHelper(hr HTTPResponse, r *http.Request) (*models.Config, bool) {
 	return config, true
 }
 
+// saveConfigHelper handles saving the config object and sending a response in
+// case of error
 func saveConfigHelper(hr HTTPResponse, config *models.Config) bool {
 	if err := config.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

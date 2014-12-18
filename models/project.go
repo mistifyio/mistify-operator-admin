@@ -10,6 +10,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
+// Project describes a set of users and is what is given  ownership of resources
 type Project struct {
 	ID       string            `json:"id"`
 	Name     string            `json:"name"`
@@ -17,14 +18,18 @@ type Project struct {
 	Users    []*User           `json:"-"`
 }
 
+// id returns the id, required by the relatable interface
 func (project *Project) id() string {
 	return project.ID
 }
 
+// pkeyName returns the database primary key name, required by the relatable
+// interface
 func (project *Project) pkeyName() string {
 	return "project_id"
 }
 
+// Validate ensures the project properties are set correctly
 func (project *Project) Validate() error {
 	if project.ID == "" {
 		return errors.New("missing id")
@@ -41,6 +46,7 @@ func (project *Project) Validate() error {
 	return nil
 }
 
+// Save persists a project to the database
 func (project *Project) Save() error {
 	if err := project.Validate(); err != nil {
 		return err
@@ -84,6 +90,7 @@ func (project *Project) Save() error {
 	return err
 }
 
+// Delete removes a project from the database
 func (project *Project) Delete() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -94,6 +101,7 @@ func (project *Project) Delete() error {
 	return err
 }
 
+// Load retrieves a project from the database
 func (project *Project) Load() error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -116,6 +124,7 @@ func (project *Project) Load() error {
 	return rows.Err()
 }
 
+// fromRows unmarshals a database query result row into the project object
 func (project *Project) fromRows(rows *sql.Rows) error {
 	var metadata string
 	err := rows.Scan(
@@ -129,6 +138,7 @@ func (project *Project) fromRows(rows *sql.Rows) error {
 	return json.Unmarshal([]byte(metadata), &project.Metadata)
 }
 
+// Decode unmarshals JSON into the project object
 func (project *Project) Decode(data io.Reader) error {
 	if err := json.NewDecoder(data).Decode(project); err != nil {
 		return err
@@ -145,6 +155,7 @@ func (project *Project) Decode(data io.Reader) error {
 	return nil
 }
 
+// LoadUsers retrieves the users related to the project from the database
 func (project *Project) LoadUsers() error {
 	users, err := UsersByProject(project)
 	if err != nil {
@@ -154,6 +165,7 @@ func (project *Project) LoadUsers() error {
 	return nil
 }
 
+// SetUsers creates and ensures the only relations teh project has with users
 func (project *Project) SetUsers(users []*User) error {
 	if len(users) == 0 {
 		return ClearRelations("projects_users", project)
@@ -168,19 +180,23 @@ func (project *Project) SetUsers(users []*User) error {
 	return project.LoadUsers()
 }
 
+// AddUser adds a relation to a user
 func (project *Project) AddUser(user *User) error {
 	return AddRelation("projects_users", project, user)
 }
 
+// RemoveUser removes a relation with a user
 func (project *Project) RemoveUser(user *User) error {
 	return RemoveRelation("projects_users", project, user)
 }
 
+// NewID generates a new uuid ID
 func (project *Project) NewID() string {
 	project.ID = uuid.New()
 	return project.ID
 }
 
+// NewProject creates and initializes a new project object
 func NewProject() *Project {
 	project := &Project{
 		ID: uuid.New(),
@@ -188,6 +204,7 @@ func NewProject() *Project {
 	return project
 }
 
+// FetchProject retrieves a project object from the database by ID
 func FetchProject(id string) (*Project, error) {
 	project := &Project{
 		ID: id,
@@ -199,6 +216,7 @@ func FetchProject(id string) (*Project, error) {
 	return project, nil
 }
 
+// ListProjects retrieves an array of all projects from the database
 func ListProjects() ([]*Project, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -216,6 +234,7 @@ func ListProjects() ([]*Project, error) {
 	return projectsFromRows(rows)
 }
 
+// ProjectsByUser retrieves an array of projects related to a user
 func ProjectsByUser(user *User) ([]*Project, error) {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -242,6 +261,7 @@ func ProjectsByUser(user *User) ([]*Project, error) {
 	return projects, nil
 }
 
+// projectsFromRows unmarshals multiple query rows into an array of projects
 func projectsFromRows(rows *sql.Rows) ([]*Project, error) {
 	projects := make([]*Project, 0, 1)
 	for rows.Next() {

@@ -9,6 +9,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterProjectRoutes registers the project routes and handlers
 func RegisterProjectRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, ListProjects).Methods("GET")
 	router.HandleFunc(prefix, CreateProject).Methods("POST")
@@ -22,6 +23,7 @@ func RegisterProjectRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{projectID}/users/{userID}", RemoveProjectUser).Methods("DELETE")
 }
 
+// ListProjects gets a list of all projects
 func ListProjects(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	projects, err := models.ListProjects()
@@ -32,6 +34,7 @@ func ListProjects(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, projects)
 }
 
+// GetProject gets a particular project
 func GetProject(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -41,6 +44,7 @@ func GetProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, project)
 }
 
+// CreateProject creates a new project
 func CreateProject(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -64,6 +68,7 @@ func CreateProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, project)
 }
 
+// UpdateProject updates an existing project
 func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -81,6 +86,7 @@ func UpdateProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, project)
 }
 
+// DeleteProject deletes an existing project
 func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -95,6 +101,7 @@ func DeleteProject(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, project)
 }
 
+// GetProjectUsers gets a list of users associated with the project
 func GetProjectUsers(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -108,6 +115,7 @@ func GetProjectUsers(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, project.Users)
 }
 
+// SetProjectUsers sets teh list of users associated with the project
 func SetProjectUsers(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -134,6 +142,7 @@ func SetProjectUsers(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, project.Users)
 }
 
+// AddProjectUser associates a user with the project
 func AddProjectUser(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -151,6 +160,7 @@ func AddProjectUser(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// RemoveProjectUser disassociates a user with the project
 func RemoveProjectUser(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	project, ok := getProjectHelper(hr, r)
@@ -168,6 +178,8 @@ func RemoveProjectUser(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// getProjectHelper gets the project object and handles sending a response in
+// case of error
 func getProjectHelper(hr HTTPResponse, r *http.Request) (*models.Project, bool) {
 	vars := mux.Vars(r)
 	projectID, ok := vars["projectID"]
@@ -191,6 +203,8 @@ func getProjectHelper(hr HTTPResponse, r *http.Request) (*models.Project, bool) 
 	return project, true
 }
 
+// saveProjectHelper saves the project object and handles sending a response in
+// case of error
 func saveProjectHelper(hr HTTPResponse, project *models.Project) bool {
 	if err := project.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

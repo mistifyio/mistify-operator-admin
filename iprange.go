@@ -10,6 +10,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
+// RegisterIPRangeRoutes registers the iprange routes and handlers
 func RegisterIPRangeRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, ListIPRanges).Methods("GET")
 	router.HandleFunc(prefix, CreateIPRange).Methods("POST")
@@ -26,6 +27,7 @@ func RegisterIPRangeRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{iprangeID}/network/{networkID}", RemoveIPRangeNetwork).Methods("DELETE")
 }
 
+// ListIPRanges gets a list of all ipranges
 func ListIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	ipranges, err := models.ListIPRanges()
@@ -36,6 +38,7 @@ func ListIPRanges(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, ipranges)
 }
 
+// GetIPRange gets a particular iprange
 func GetIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -45,6 +48,7 @@ func GetIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, iprange)
 }
 
+// CreateIPRange creates a new iprange
 func CreateIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 
@@ -68,6 +72,7 @@ func CreateIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, iprange)
 }
 
+// UpdateIPRange updates an existing iprange
 func UpdateIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -87,6 +92,7 @@ func UpdateIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, iprange)
 }
 
+// DeleteIPRange deletes an existing iprange
 func DeleteIPRange(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -101,6 +107,7 @@ func DeleteIPRange(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, iprange)
 }
 
+// GetIPRangeHypervisors gets a list of hypervisors associated with the iprange
 func GetIPRangeHypervisors(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -114,6 +121,8 @@ func GetIPRangeHypervisors(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, iprange.Hypervisors)
 }
 
+// SetIPRangeHypervisors sets the list of hypervisors associated with the
+// iprange
 func SetIPRangeHypervisors(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -140,6 +149,7 @@ func SetIPRangeHypervisors(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, iprange.Hypervisors)
 }
 
+// AddIPRangeHypervisor associates a hypervisor with the iprange
 func AddIPRangeHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -157,6 +167,8 @@ func AddIPRangeHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, &struct{}{})
 }
 
+// RemoveIPRangeHypervisor removes an association of a hypervisor with the
+// iprange
 func RemoveIPRangeHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -174,6 +186,7 @@ func RemoveIPRangeHypervisor(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// GetIPRangeNetwork retrieves the network associated with the iprange
 func GetIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -187,6 +200,7 @@ func GetIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, iprange.Network)
 }
 
+// SetIPRangeNetwork sets the network associated with the iprange
 func SetIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -204,6 +218,7 @@ func SetIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusCreated, &struct{}{})
 }
 
+// RemoveIPRangeNetwork unsets the network associated with the iprange
 func RemoveIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
 	hr := HTTPResponse{w}
 	iprange, ok := getIPRangeHelper(hr, r)
@@ -221,6 +236,8 @@ func RemoveIPRangeNetwork(w http.ResponseWriter, r *http.Request) {
 	hr.JSON(http.StatusOK, &struct{}{})
 }
 
+// getIPRangeHelper gets the iprange object and handles sending a response in
+// case of error
 func getIPRangeHelper(hr HTTPResponse, r *http.Request) (*models.IPRange, bool) {
 	vars := mux.Vars(r)
 	iprangeID, ok := vars["iprangeID"]
@@ -244,6 +261,8 @@ func getIPRangeHelper(hr HTTPResponse, r *http.Request) (*models.IPRange, bool) 
 	return iprange, true
 }
 
+// saveIPRangeHelper saves the hypervisor object and handles sending a response
+// in case of error
 func saveIPRangeHelper(hr HTTPResponse, iprange *models.IPRange) bool {
 	if err := iprange.Validate(); err != nil {
 		hr.JSONMsg(http.StatusBadRequest, err.Error())

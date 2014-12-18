@@ -1,3 +1,4 @@
+// Package config allows for reading configuration from a JSON file
 package config
 
 import (
@@ -10,12 +11,14 @@ import (
 var conf *Config
 
 type (
+	// Config struct holds data from a JSON config file
 	Config struct {
 		DB      DB                           `json:"db"`
 		Mistify map[string]map[string]string `json:"mistify"`
 	}
 )
 
+// Load parses a JSON config file
 func Load(path string) error {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -37,6 +40,7 @@ func Load(path string) error {
 	return nil
 }
 
+// Get returns the configuration data and dies if the config is not loaded
 func Get() *Config {
 	if conf == nil {
 		log.Fatal("attempted to access config while config not loaded")

@@ -7,11 +7,15 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
+// relatable is an interface that allows for associations between objects
+// in a database
 type relatable interface {
 	id() string
 	pkeyName() string
 }
 
+// AddRelation creates a new relation between two relatable objects in the
+// database
 func AddRelation(tableName string, r1 relatable, r2 relatable) error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -30,6 +34,8 @@ func AddRelation(tableName string, r1 relatable, r2 relatable) error {
 	return err
 }
 
+// RemoveRelation removes a relation between two relatable objects in the
+// database
 func RemoveRelation(tableName string, r1 relatable, r2 relatable) error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -47,6 +53,8 @@ func RemoveRelation(tableName string, r1 relatable, r2 relatable) error {
 	return err
 }
 
+// SetRelations creates and ensures the only relations between a relatable
+// object and another relatable type is the provided set
 func SetRelations(tableName string, r1 relatable, r2s []relatable) error {
 	d, err := db.Connect(nil)
 	if err != nil {
@@ -99,6 +107,8 @@ func SetRelations(tableName string, r1 relatable, r2s []relatable) error {
 	return txn.Commit()
 }
 
+// ClearRelations relations removes all relations a relatable object has with another
+// relatable object type
 func ClearRelations(tableName string, r1 relatable) error {
 	d, err := db.Connect(nil)
 	if err != nil {
