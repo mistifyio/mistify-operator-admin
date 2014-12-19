@@ -21,6 +21,11 @@ func RegisterProjectRoutes(prefix string, router *mux.Router) {
 	sub.HandleFunc("/{projectID}/users", SetProjectUsers).Methods("PUT")
 	sub.HandleFunc("/{projectID}/users/{userID}", AddProjectUser).Methods("PUT")
 	sub.HandleFunc("/{projectID}/users/{userID}", RemoveProjectUser).Methods("DELETE")
+	sub.HandleFunc("/{projectID}/permissions", GetProjectPermissions).Methods("GET")
+	sub.HandleFunc("/{projectID}/permissions", SetProjectPermissions).Methods("PUT")
+	sub.HandleFunc("/{projectID}/permissions/{permissionID}", AddProjectPermission).Methods("PUT")
+	sub.HandleFunc("/{projectID}/permissions/{permissionID}", RemoveProjectPermission).Methods("DELETE")
+
 }
 
 // ListProjects gets a list of all projects
@@ -172,6 +177,83 @@ func RemoveProjectUser(w http.ResponseWriter, r *http.Request) {
 	userID := vars["userID"]
 
 	if err := project.RemoveUser(&models.User{ID: userID}); err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, &struct{}{})
+}
+
+// GetProjectPermissions gets a list of permissions associated with the project
+func GetProjectPermissions(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	project, ok := getProjectHelper(hr, r)
+	if !ok {
+		return
+	}
+	if err := project.LoadPermissions(); err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, project.Permissions)
+}
+
+// SetProjectPermissions sets teh list of permissions associated with the project
+func SetProjectPermissions(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	project, ok := getProjectHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	var permissionIDs []string
+	decoder := json.NewDecoder(r.Body)
+	if err := decoder.Decode(&permissionIDs); err != nil {
+		hr.JSONMsg(http.StatusBadRequest, err.Error())
+		return
+	}
+
+	permissions := make([]*models.Permission, len(permissionIDs))
+	for i, v := range permissionIDs {
+		permissions[i] = &models.Permission{ID: v}
+	}
+
+	if err := project.SetPermissions(permissions); err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, project.Permissions)
+}
+
+// AddProjectPermission associates a permission with the project
+func AddProjectPermission(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	project, ok := getProjectHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	permissionID := vars["permissionID"]
+
+	if err := project.AddPermission(&models.Permission{ID: permissionID}); err != nil {
+		hr.JSONError(http.StatusInternalServerError, err)
+		return
+	}
+	hr.JSON(http.StatusOK, &struct{}{})
+}
+
+// RemoveProjectPermission disassociates a permission with the project
+func RemoveProjectPermission(w http.ResponseWriter, r *http.Request) {
+	hr := HTTPResponse{w}
+	project, ok := getProjectHelper(hr, r)
+	if !ok {
+		return
+	}
+
+	vars := mux.Vars(r)
+	permissionID := vars["permissionID"]
+
+	if err := project.RemovePermission(&models.Permission{ID: permissionID}); err != nil {
 		hr.JSONError(http.StatusInternalServerError, err)
 		return
 	}

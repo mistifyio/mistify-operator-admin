@@ -12,10 +12,11 @@ import (
 
 // Project describes a set of users and is what is given  ownership of resources
 type Project struct {
-	ID       string            `json:"id"`
-	Name     string            `json:"name"`
-	Metadata map[string]string `json:"metadata"`
-	Users    []*User           `json:"-"`
+	ID          string            `json:"id"`
+	Name        string            `json:"name"`
+	Metadata    map[string]string `json:"metadata"`
+	Users       []*User           `json:"-"`
+	Permissions []*Permission     `json:"-"`
 }
 
 // id returns the id, required by the relatable interface
@@ -190,6 +191,41 @@ func (project *Project) RemoveUser(user *User) error {
 	return RemoveRelation("projects_users", project, user)
 }
 
+// LoadPermissions retrieves the permissions related to the project from the database
+func (project *Project) LoadPermissions() error {
+	permissions, err := PermissionsByProject(project)
+	if err != nil {
+		return err
+	}
+	project.Permissions = permissions
+	return nil
+}
+
+// SetPermissions creates and ensures the only relations teh project has with permissions
+func (project *Project) SetPermissions(permissions []*Permission) error {
+	if len(permissions) == 0 {
+		return ClearRelations("projects_permissions", project)
+	}
+	relatables := make([]relatable, len(permissions))
+	for i, permission := range permissions {
+		relatables[i] = relatable(permission)
+	}
+	if err := SetRelations("projects_permissions", project, relatables); err != nil {
+		return err
+	}
+	return project.LoadPermissions()
+}
+
+// AddPermission adds a relation to a permission
+func (project *Project) AddPermission(permission *Permission) error {
+	return AddRelation("projects_permissions", project, permission)
+}
+
+// RemovePermission removes a relation with a permission
+func (project *Project) RemovePermission(permission *Permission) error {
+	return RemoveRelation("projects_permissions", project, permission)
+}
+
 // NewID generates a new uuid ID
 func (project *Project) NewID() string {
 	project.ID = uuid.New()
@@ -241,13 +277,40 @@ func ProjectsByUser(user *User) ([]*Project, error) {
 		return nil, err
 	}
 	sql := `
-	SELECT p.project_id, p.name
+	SELECT p.project_id, p.name, p.metadata
 	FROM projects p
 	JOIN projects_users pu ON p.project_id = pu.project_id
 	WHERE pu.user_id = $1
 	ORDER BY project_id asc
 	`
 	rows, err := d.Query(sql, user.ID)
+	if err != nil {
+		return nil, err
+	}
+	projects, err := projectsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
+// ProjectsByPermission retrieves an array of projects related to a permission
+func ProjectsByPermission(permission *Permission) ([]*Project, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT p.project_id, p.name, p.metadata
+	FROM projects p
+	JOIN projects_permissions pp ON p.project_id = pp.project_id
+	WHERE pp.permission_id = $1
+	ORDER BY project_id asc
+	`
+	rows, err := d.Query(sql, permission.ID)
 	if err != nil {
 		return nil, err
 	}

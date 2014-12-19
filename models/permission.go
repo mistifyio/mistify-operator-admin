@@ -21,8 +21,20 @@ type (
 		Owner       bool              `json:"owner"`
 		Description string            `json:"description"`
 		Metadata    map[string]string `json:"metadata"`
+		Projects    []*Project        `json:"-"`
 	}
 )
+
+// id returns the ID, required by the relatable interface
+func (permission *Permission) id() string {
+	return permission.ID
+}
+
+// pkeyName returns the database primary key name, required by the relatable
+// interface
+func (permission *Permission) pkeyName() string {
+	return "permission_id"
+}
 
 // Validate ensures the permission properties are set correctly
 func (permission *Permission) Validate() error {
@@ -60,17 +72,17 @@ func (permission *Permission) Save() error {
 	sql := `
 	WITH new_values (permission_id, name, service, action, entitytype, owner,
 		description, metadata) AS (
-		VALUES ($1::uuid, $2, $3, $4, $5, $6, $7, $8::json)
-	)
+		VALUES ($1::uuid, $2, $3, $4, $5, $6::boolean, $7, $8::json)
+	),
 	upsert as (
 		UPDATE permissions p SET
 			permission_id = nv.permission_id,
 			name = nv.name,
 			service = nv.service,
-			action = nv.action.
+			action = nv.action,
 			entitytype = nv.entitytype,
 			owner = nv.owner,
-			meatadata = nv.metadata
+			metadata = nv.metadata
 		FROM new_values nv
 		WHERE p.permission_id = nv.permission_id
 		RETURNING nv.permission_id
@@ -172,6 +184,42 @@ func (permission *Permission) Decode(data io.Reader) error {
 	return nil
 }
 
+// LoadProjects retrieves the projects associated with the permission
+func (permission *Permission) LoadProjects() error {
+	projects, err := ProjectsByPermission(permission)
+	if err != nil {
+		return err
+	}
+	permission.Projects = projects
+	return nil
+}
+
+// SetProjects creates and ensures the only relations the permission has with
+// projects
+func (permission *Permission) SetProjects(projects []*Project) error {
+	if len(projects) == 0 {
+		return ClearRelations("projects_permissions", permission)
+	}
+	relatables := make([]relatable, len(projects))
+	for i, project := range projects {
+		relatables[i] = relatable(project)
+	}
+	if err := SetRelations("projects_permissions", permission, relatables); err != nil {
+		return err
+	}
+	return permission.LoadProjects()
+}
+
+// AddProject adds a relation to a project
+func (permission *Permission) AddProject(project *Project) error {
+	return AddRelation("projects_permissions", permission, project)
+}
+
+// RemoveProject removes a relation with a project
+func (permission *Permission) RemoveProject(project *Project) error {
+	return RemoveRelation("projects_permissions", permission, project)
+}
+
 // NewID generates a new uuid ID
 func (permission *Permission) NewID() string {
 	permission.ID = uuid.New()
@@ -185,6 +233,18 @@ func NewPermission() *Permission {
 		Metadata: make(map[string]string),
 	}
 	return permission
+}
+
+// FetchPermission retrieves a permission object from the database by ID
+func FetchPermission(id string) (*Permission, error) {
+	permission := &Permission{
+		ID: id,
+	}
+	err := permission.Load()
+	if err != nil {
+		return nil, err
+	}
+	return permission, nil
 }
 
 // ListPermissions retrieve an array of all permission objects from the database
@@ -203,16 +263,51 @@ func ListPermissions() ([]*Permission, error) {
 	if err != nil {
 		return nil, err
 	}
+	permissions, err := permissionsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+// PermissionsByProject retrieves an array of permission related to a project
+func PermissionsByProject(project *Project) ([]*Permission, error) {
+	d, err := db.Connect(nil)
+	if err != nil {
+		return nil, err
+	}
+	sql := `
+	SELECT p.permission_id, p.name, p.service, p.action, p.entitytype, p.owner,
+		p.description, p.metadata
+	FROM permissions p
+    JOIN projects_permissions pp ON p.permission_id = pp.permission_id
+    WHERE pp.project_id = $1
+    ORDER BY permission_id asc
+    `
+	rows, err := d.Query(sql, project.ID)
+	if err != nil {
+		return nil, err
+	}
+	permissions, err := permissionsFromRows(rows)
+	if err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return permissions, nil
+}
+
+// permissionsFromRows unmarshals multiple query rows into an array of permissions
+func permissionsFromRows(rows *sql.Rows) ([]*Permission, error) {
 	permissions := make([]*Permission, 0, 1)
 	for rows.Next() {
 		permission := &Permission{}
-		if err := permission.fromRows(rows); err != nil {
-			return nil, err
-		}
+		permission.fromRows(rows)
 		permissions = append(permissions, permission)
-	}
-	if err = rows.Err(); err != nil {
-		return nil, err
 	}
 	return permissions, nil
 }
