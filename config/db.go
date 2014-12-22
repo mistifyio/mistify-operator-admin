@@ -1,8 +1,9 @@
 package config
 
 import (
-	"errors"
 	"fmt"
+
+	"github.com/hashicorp/go-multierror"
 )
 
 // Available drivers
@@ -22,22 +23,23 @@ type DB struct {
 
 // Validate ensures that the database configuration is reasonable
 func (db *DB) Validate() error {
+	var result *multierror.Error
 	if _, ok := drivers[db.Driver]; !ok {
-		return fmt.Errorf("'%s': not an available database driver", db.Driver)
+		result = multierror.Append(result, ErrDBBadDriver)
 	}
 	if db.Database == "" {
-		return errors.New("database cannot be empty")
+		result = multierror.Append(result, ErrDBNoDatabase)
 	}
 	if db.Username == "" {
-		return errors.New("username cannot be empty")
+		result = multierror.Append(result, ErrDBNoUsername)
 	}
 	if db.Host == "" {
-		return errors.New("host cannot be empty")
+		result = multierror.Append(result, ErrDBNoHost)
 	}
 	if db.Port <= 0 || db.Port > 65535 {
-		return fmt.Errorf("%d: not a valid port", db.Port)
+		result = multierror.Append(result, ErrDBBadPort)
 	}
-	return nil
+	return result.ErrorOrNil()
 }
 
 // DataSourceName generates the dsn for connecting to the database from the
