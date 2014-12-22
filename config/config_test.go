@@ -2,30 +2,24 @@ package config_test
 
 import (
 	"io/ioutil"
-	"syscall"
 	"testing"
 
 	h "github.com/bakins/test-helpers"
 	"github.com/mistifyio/mistify-operator-admin/config"
 )
 
+var configFileName = "../cmd/mistify-operator-admin/testconfig.json"
+
 func TestConfigLoad(t *testing.T) {
-	fileName := loadConfig(t)
-	defer syscall.Unlink(fileName)
+	err := config.Load(configFileName)
+	h.Ok(t, err)
 }
 
 func TestConfigGet(t *testing.T) {
-	fileName := loadConfig(t)
-	defer syscall.Unlink(fileName)
+	err := config.Load(configFileName)
+	h.Ok(t, err)
 	conf := config.Get()
 	h.Assert(t, conf != nil, "did not expect conf to be nil")
-}
-
-func loadConfig(t *testing.T) string {
-	fileName := tempConfigFile()
-	err := config.Load(fileName)
-	h.Ok(t, err)
-	return fileName
 }
 
 func tempConfigFile() string {

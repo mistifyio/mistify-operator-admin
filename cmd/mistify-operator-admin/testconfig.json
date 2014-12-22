@@ -1,0 +1,14 @@
+{
+    "db": {
+        "driver": "postgres",
+        "database": "testdb",
+        "username": "operator",
+        "host": "localhost",
+        "port": 5432
+    },
+    "mistify": {
+        "foobar": {
+            "baz": "default"
+        }
+    }
+}
