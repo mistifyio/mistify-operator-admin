@@ -13,18 +13,29 @@ clean:
 install: cmd/mistify-operator-admin/mistify-operator-admin
 	install -D cmd/mistify-operator-admin/mistify-operator-admin $(DESTDIR)$(SBIN_DIR)/mistify-operator-admin
 
-create_db_user:
-	-sudo -u postgres createuser -l operator;
+create_test_db_user:
+	sudo -u postgres psql -c "create user testoperator with superuser password 'testpass';"
 
-test_setup: create_db_user
+delete_test_db_user:
+	-sudo -u postgres dropuser testoperator
+
+create_test_db:
 	sudo -u postgres createdb testdb && \
 	sudo -u postgres psql -q testdb < schema.sql
 
-test_clean:
+delete_test_db:
 	-sudo -u postgres dropdb testdb
+
+test_setup: create_test_db_user create_test_db
+
+test_clean: delete_test_db_user delete_test_db
 
 test_config: cmd/mistify-operator-admin/testconfig.json
 	cd config; \
 	go test
 
-test : | test_setup test_config test_clean
+test_db: cmd/mistify-operator-admin/testconfig.json
+	cd db; \
+	go test
+
+test : | test_setup test_config test_db test_clean
