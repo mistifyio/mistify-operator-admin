@@ -6,12 +6,9 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	h "github.com/bakins/test-helpers"
-	"github.com/mistifyio/mistify-operator-admin/config"
-	"github.com/mistifyio/mistify-operator-admin/db"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
-var configFileName = "../cmd/mistify-operator-admin/testconfig.json"
 var flavorJSON = `{
 	"id": "ebf3bfd5-9915-4ed1-bcb3-117bb48b155d",
 	"name": "fooName",
@@ -22,13 +19,6 @@ var flavorJSON = `{
 		"foo": "bar"
 	}
 }`
-
-func setup(t *testing.T) {
-	config.Load(configFileName)
-	db, err := db.Connect(nil)
-	h.Ok(t, err)
-	h.Ok(t, db.Ping())
-}
 
 func createFlavor(t *testing.T) *models.Flavor {
 	r := strings.NewReader(flavorJSON)
@@ -67,7 +57,6 @@ func TestFlavorDecode(t *testing.T) {
 
 func TestFlavorValidate(t *testing.T) {
 	// TODO: Validation test
-	setup(t)
 }
 
 func TestFlavorSave(t *testing.T) {

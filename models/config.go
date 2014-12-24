@@ -30,7 +30,7 @@ func (config *Config) Validate() error {
 }
 
 // Get retrieves the full config with set values taking precedence over defaults
-func (config *Config) Get() *map[string]map[string]string {
+func (config *Config) Get() map[string]map[string]string {
 	data := make(map[string]map[string]string)
 	defaultConfig := conf.Get().Mistify
 	for namespace := range defaultConfig {
@@ -41,7 +41,7 @@ func (config *Config) Get() *map[string]map[string]string {
 			data[namespace] = config.GetNamespace(namespace)
 		}
 	}
-	return &data
+	return data
 }
 
 // GetNamespace returns a map of config key/value pairs with set values merged
