@@ -38,4 +38,8 @@ test_db: cmd/mistify-operator-admin/testconfig.json
 	cd db; \
 	go test
 
-test : | test_setup test_config test_db test_clean
+test_models: cmd/mistify-operator-admin/testconfig.json
+	cd models; \
+	go test
+
+test : | test_setup test_config test_db test_models test_clean
