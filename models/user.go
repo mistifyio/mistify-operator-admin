@@ -208,7 +208,8 @@ func (user *User) NewID() string {
 // NewUser creates and initializes a new user object
 func NewUser() *User {
 	user := &User{
-		ID: uuid.New(),
+		ID:       uuid.New(),
+		Metadata: make(map[string]string),
 	}
 	return user
 }

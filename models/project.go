@@ -235,7 +235,8 @@ func (project *Project) NewID() string {
 // NewProject creates and initializes a new project object
 func NewProject() *Project {
 	project := &Project{
-		ID: uuid.New(),
+		ID:       uuid.New(),
+		Metadata: make(map[string]string),
 	}
 	return project
 }
