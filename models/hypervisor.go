@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 
@@ -138,7 +137,6 @@ func (hypervisor *Hypervisor) Save() error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(data)
 	_, err = d.Exec(sql,
 		data.ID,
 		data.MAC,
