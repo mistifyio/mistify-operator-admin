@@ -6,7 +6,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -26,25 +25,25 @@ type Flavor struct {
 // Validate ensures the flavor properties are set correctly
 func (flavor *Flavor) Validate() error {
 	if flavor.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(flavor.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if flavor.Name == "" {
-		return errors.New("missing name")
+		return ErrNoName
 	}
 	if flavor.CPU <= 0 {
-		return errors.New("cpu must be > 0")
+		return ErrBadCPU
 	}
 	if flavor.Memory <= 0 {
-		return errors.New("memory must be > 0")
+		return ErrBadMemory
 	}
 	if flavor.Disk <= 0 {
-		return errors.New("disk must be > 0")
+		return ErrBadDisk
 	}
 	if flavor.Metadata == nil {
-		return errors.New("metadata must not be nil")
+		return ErrNilMetadata
 	}
 	return nil
 }

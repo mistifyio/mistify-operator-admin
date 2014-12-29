@@ -2,7 +2,6 @@ package models
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"strings"
@@ -24,7 +23,7 @@ type (
 // Validate checks that the properties of Config are valid
 func (config *Config) Validate() error {
 	if config.data == nil {
-		return errors.New("data must not be nil")
+		return ErrNilData
 	}
 	return nil
 }

@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -32,16 +31,16 @@ func (network *Network) pkeyName() string {
 // Validate ensures the network properties are set correctly
 func (network *Network) Validate() error {
 	if network.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(network.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if network.Name == "" {
-		return errors.New("missing name")
+		return ErrNoName
 	}
 	if network.Metadata == nil {
-		return errors.New("metadata must not be nil")
+		return ErrNilMetadata
 	}
 	return nil
 }

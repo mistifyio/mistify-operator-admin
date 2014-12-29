@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -33,16 +32,16 @@ func (project *Project) pkeyName() string {
 // Validate ensures the project properties are set correctly
 func (project *Project) Validate() error {
 	if project.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(project.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if project.Name == "" {
-		return errors.New("missing name")
+		return ErrNoName
 	}
 	if project.Metadata == nil {
-		return errors.New("metadata must not be nil")
+		return ErrNilMetadata
 	}
 	return nil
 }

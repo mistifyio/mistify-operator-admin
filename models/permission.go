@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
@@ -39,19 +38,19 @@ func (permission *Permission) pkeyName() string {
 // Validate ensures the permission properties are set correctly
 func (permission *Permission) Validate() error {
 	if permission.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(permission.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if permission.Service == "" {
-		return errors.New("missing service")
+		return ErrNoService
 	}
 	if permission.Action == "" {
-		return errors.New("missing action")
+		return ErrNoAction
 	}
 	if permission.Metadata == nil {
-		return errors.New("metadata must not be nil")
+		return ErrNilMetadata
 	}
 	return nil
 }

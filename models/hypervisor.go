@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net"
 
@@ -84,19 +83,19 @@ func (hypervisor Hypervisor) MarshalJSON() ([]byte, error) {
 // Validate ensures the hypervisor properties are set correctly
 func (hypervisor *Hypervisor) Validate() error {
 	if hypervisor.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(hypervisor.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if hypervisor.MAC == nil {
-		return errors.New("missing mac")
+		return ErrNoMAC
 	}
 	if hypervisor.IP == nil {
-		return errors.New("missing ip")
+		return ErrNoIP
 	}
 	if hypervisor.Metadata == nil {
-		return errors.New("missing metadata")
+		return ErrNilMetadata
 	}
 	return nil
 }

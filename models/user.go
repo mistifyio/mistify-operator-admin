@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net/mail"
 
@@ -34,16 +33,16 @@ func (user *User) pkeyName() string {
 // Validate ensures the user properties are set correctly
 func (user *User) Validate() error {
 	if user.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(user.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if user.Username == "" {
-		return errors.New("missing username")
+		return ErrNoUsername
 	}
 	if user.Email == "" {
-		return errors.New("missing email")
+		return ErrNoEmail
 	}
 	if _, err := mail.ParseAddress(user.Email); err != nil {
 		return err

@@ -3,7 +3,6 @@ package models
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"io"
 	"net"
 
@@ -93,22 +92,22 @@ func (iprange IPRange) MarshalJSON() ([]byte, error) {
 // Validate ensures the iprange proerties are set correctly
 func (iprange *IPRange) Validate() error {
 	if iprange.ID == "" {
-		return errors.New("missing id")
+		return ErrNoID
 	}
 	if uuid.Parse(iprange.ID) == nil {
-		return errors.New("invalid id. must be uuid")
+		return ErrBadID
 	}
 	if iprange.CIDR == nil {
-		return errors.New("missing cidr")
+		return ErrNoCIDR
 	}
 	if iprange.Gateway == nil {
-		return errors.New("missing gateway")
+		return ErrNoGateway
 	}
 	if iprange.Start == nil {
-		return errors.New("missing start ip")
+		return ErrNoStartIP
 	}
 	if iprange.End == nil {
-		return errors.New("missing end ip")
+		return ErrNoEndIP
 	}
 	return nil
 }
