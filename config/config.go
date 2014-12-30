@@ -4,8 +4,6 @@ package config
 import (
 	"encoding/json"
 	"io/ioutil"
-
-	"github.com/mistifyio/mistify-agent/log"
 )
 
 var conf *Config
@@ -43,7 +41,7 @@ func Load(path string) error {
 // Get returns the configuration data and dies if the config is not loaded
 func Get() *Config {
 	if conf == nil {
-		log.Fatal("attempted to access config while config not loaded")
+		panic("attempted to access config while config not loaded")
 	}
 	return conf
 }

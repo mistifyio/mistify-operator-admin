@@ -1,6 +1,8 @@
 package config_test
 
 import (
+	"io/ioutil"
+	"syscall"
 	"testing"
 
 	h "github.com/bakins/test-helpers"
@@ -10,8 +12,25 @@ import (
 var configFileName = "../cmd/mistify-operator-admin/testconfig.json"
 
 func TestConfigLoad(t *testing.T) {
-	err := config.Load(configFileName)
-	h.Ok(t, err)
+	h.Ok(t, config.Load(configFileName))
+	h.Assert(t, config.Load("thisisnotarealfile") != nil, "expected ReadFile error")
+
+	f, err := ioutil.TempFile("", "BadJSON")
+	if err != nil {
+		panic(err)
+	}
+	defer syscall.Unlink(f.Name())
+	ioutil.WriteFile(f.Name(), []byte("foobar"), 0644)
+	h.Assert(t, config.Load(f.Name()) != nil, "expected Unmarshal error")
+
+	f, err = ioutil.TempFile("", "BadJSON")
+	if err != nil {
+		panic(err)
+	}
+	defer syscall.Unlink(f.Name())
+	ioutil.WriteFile(f.Name(), []byte(`{"db":{}}`), 0644)
+
+	h.Assert(t, config.Load(f.Name()) != nil, "expected DB Validate error")
 }
 
 func TestConfigGet(t *testing.T) {
