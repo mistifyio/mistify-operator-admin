@@ -6,6 +6,7 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	h "github.com/bakins/test-helpers"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
@@ -56,7 +57,42 @@ func TestFlavorDecode(t *testing.T) {
 }
 
 func TestFlavorValidate(t *testing.T) {
-	// TODO: Validation test
+	flavor := &models.Flavor{}
+	var err error
+
+	err = flavor.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	h.Assert(t, errContains(models.ErrBadCPU, err), "expected ErrBadCPU")
+	h.Assert(t, errContains(models.ErrBadMemory, err), "expected ErrBadMemory")
+	h.Assert(t, errContains(models.ErrBadDisk, err), "expected ErrBadDisk")
+	h.Assert(t, errContains(models.ErrNilMetadata, err), "expected ErrNilMetadata")
+
+	flavor.ID = "foobar"
+	err = flavor.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	flavor.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, flavor.Validate()), "did not expect ErrNoID")
+
+	flavor.Name = "foobar"
+	h.Assert(t, errDoesNotContain(models.ErrNoName, flavor.Validate()), "did not expect ErrNoName")
+
+	flavor.CPU = 1
+	h.Assert(t, errDoesNotContain(models.ErrBadCPU, flavor.Validate()), "did not expect ErrBadCPU")
+
+	flavor.Memory = 1
+	h.Assert(t, errDoesNotContain(models.ErrBadMemory, flavor.Validate()), "did not expect ErrBadMemory")
+
+	flavor.Disk = 1
+	h.Assert(t, errDoesNotContain(models.ErrBadDisk, flavor.Validate()), "did not expect ErrBadDisk")
+
+	flavor.Metadata = make(map[string]string)
+	err = flavor.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
 }
 
 func TestFlavorSave(t *testing.T) {
@@ -101,4 +137,23 @@ func TestListFlavors(t *testing.T) {
 	checkFlavorValues(t, flavors[0])
 
 	h.Ok(t, flavor.Delete())
+}
+
+func errContains(err error, list error) bool {
+	merr, ok := list.(*multierror.Error)
+	if !ok {
+		return false
+	}
+
+	errList := merr.Errors
+	for _, e := range errList {
+		if err == e {
+			return true
+		}
+	}
+	return false
+}
+
+func errDoesNotContain(err error, list error) bool {
+	return !errContains(err, list)
 }

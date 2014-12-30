@@ -9,6 +9,7 @@ import (
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -24,28 +25,29 @@ type Flavor struct {
 
 // Validate ensures the flavor properties are set correctly
 func (flavor *Flavor) Validate() error {
+	var result *multierror.Error
 	if flavor.ID == "" {
-		return ErrNoID
+		result = multierror.Append(result, ErrNoID)
 	}
 	if uuid.Parse(flavor.ID) == nil {
-		return ErrBadID
+		result = multierror.Append(result, ErrBadID)
 	}
 	if flavor.Name == "" {
-		return ErrNoName
+		result = multierror.Append(result, ErrNoName)
 	}
 	if flavor.CPU <= 0 {
-		return ErrBadCPU
+		result = multierror.Append(result, ErrBadCPU)
 	}
 	if flavor.Memory <= 0 {
-		return ErrBadMemory
+		result = multierror.Append(result, ErrBadMemory)
 	}
 	if flavor.Disk <= 0 {
-		return ErrBadDisk
+		result = multierror.Append(result, ErrBadDisk)
 	}
 	if flavor.Metadata == nil {
-		return ErrNilMetadata
+		result = multierror.Append(result, ErrNilMetadata)
 	}
-	return nil
+	return result.ErrorOrNil()
 }
 
 // Save persists a flavor to the database

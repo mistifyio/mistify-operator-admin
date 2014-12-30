@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -82,22 +83,23 @@ func (hypervisor Hypervisor) MarshalJSON() ([]byte, error) {
 
 // Validate ensures the hypervisor properties are set correctly
 func (hypervisor *Hypervisor) Validate() error {
+	var result *multierror.Error
 	if hypervisor.ID == "" {
-		return ErrNoID
+		result = multierror.Append(result, ErrNoID)
 	}
 	if uuid.Parse(hypervisor.ID) == nil {
-		return ErrBadID
+		result = multierror.Append(result, ErrBadID)
 	}
 	if hypervisor.MAC == nil {
-		return ErrNoMAC
+		result = multierror.Append(result, ErrNoMAC)
 	}
 	if hypervisor.IP == nil {
-		return ErrNoIP
+		result = multierror.Append(result, ErrNoIP)
 	}
 	if hypervisor.Metadata == nil {
-		return ErrNilMetadata
+		result = multierror.Append(result, ErrNilMetadata)
 	}
-	return nil
+	return result.ErrorOrNil()
 }
 
 // Save persists a hypervisor to the database

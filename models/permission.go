@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -37,22 +38,23 @@ func (permission *Permission) pkeyName() string {
 
 // Validate ensures the permission properties are set correctly
 func (permission *Permission) Validate() error {
+	var results *multierror.Error
 	if permission.ID == "" {
-		return ErrNoID
+		results = multierror.Append(results, ErrNoID)
 	}
 	if uuid.Parse(permission.ID) == nil {
-		return ErrBadID
+		results = multierror.Append(results, ErrBadID)
 	}
 	if permission.Service == "" {
-		return ErrNoService
+		results = multierror.Append(results, ErrNoService)
 	}
 	if permission.Action == "" {
-		return ErrNoAction
+		results = multierror.Append(results, ErrNoAction)
 	}
 	if permission.Metadata == nil {
-		return ErrNilMetadata
+		results = multierror.Append(results, ErrNilMetadata)
 	}
-	return nil
+	return results.ErrorOrNil()
 }
 
 // Save persists the permission to the database

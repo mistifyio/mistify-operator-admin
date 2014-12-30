@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -31,19 +32,20 @@ func (project *Project) pkeyName() string {
 
 // Validate ensures the project properties are set correctly
 func (project *Project) Validate() error {
+	var results *multierror.Error
 	if project.ID == "" {
-		return ErrNoID
+		results = multierror.Append(results, ErrNoID)
 	}
 	if uuid.Parse(project.ID) == nil {
-		return ErrBadID
+		results = multierror.Append(results, ErrBadID)
 	}
 	if project.Name == "" {
-		return ErrNoName
+		results = multierror.Append(results, ErrNoName)
 	}
 	if project.Metadata == nil {
-		return ErrNilMetadata
+		results = multierror.Append(results, ErrNilMetadata)
 	}
-	return nil
+	return results.ErrorOrNil()
 }
 
 // Save persists a project to the database

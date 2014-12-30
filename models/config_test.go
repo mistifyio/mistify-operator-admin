@@ -17,7 +17,11 @@ var configJSON = `{
 }`
 
 func TestConfigValidate(t *testing.T) {
-	//TODO
+	c := &models.Config{}
+	h.Equals(t, models.ErrNilData, c.Validate())
+
+	c = models.NewConfig()
+	h.Ok(t, c.Validate())
 }
 
 func TestConfigGet(t *testing.T) {

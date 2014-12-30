@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"net"
 	"strings"
 	"testing"
 
@@ -56,6 +57,37 @@ func TestHypervisorUnmarshalJSON(t *testing.T) {
 func TestHypervisorDecode(t *testing.T) {
 	hypervisor := createHypervisor(t)
 	checkHypervisorValues(t, hypervisor)
+}
+
+func TestHypervisorValidate(t *testing.T) {
+	hypervisor := &models.Hypervisor{}
+	var err error
+
+	err = hypervisor.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	h.Assert(t, errContains(models.ErrNoMAC, err), "expected ErrNoMAC")
+	h.Assert(t, errContains(models.ErrNoIP, err), "expected ErrNoIP")
+	h.Assert(t, errContains(models.ErrNilMetadata, err), "expected ErrNilMetadata")
+
+	hypervisor.ID = "foobar"
+	err = hypervisor.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	hypervisor.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, hypervisor.Validate()), "did not expect ErrBadID")
+
+	hypervisor.MAC, err = net.ParseMAC("01:23:45:67:89:ab")
+	h.Assert(t, errDoesNotContain(models.ErrNoMAC, hypervisor.Validate()), "did not expect ErrNoMac")
+
+	hypervisor.IP = net.ParseIP("192.168.1.1")
+	h.Assert(t, errDoesNotContain(models.ErrNoIP, hypervisor.Validate()), "did not expect ErrNoIP")
+
+	hypervisor.Metadata = make(map[string]string)
+	err = hypervisor.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
 }
 
 func TestHypervisorMarshalJSON(t *testing.T) {

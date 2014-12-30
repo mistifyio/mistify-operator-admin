@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -91,25 +92,29 @@ func (iprange IPRange) MarshalJSON() ([]byte, error) {
 
 // Validate ensures the iprange proerties are set correctly
 func (iprange *IPRange) Validate() error {
+	var results *multierror.Error
 	if iprange.ID == "" {
-		return ErrNoID
+		results = multierror.Append(results, ErrNoID)
 	}
 	if uuid.Parse(iprange.ID) == nil {
-		return ErrBadID
+		results = multierror.Append(results, ErrBadID)
 	}
 	if iprange.CIDR == nil {
-		return ErrNoCIDR
+		results = multierror.Append(results, ErrNoCIDR)
 	}
 	if iprange.Gateway == nil {
-		return ErrNoGateway
+		results = multierror.Append(results, ErrNoGateway)
 	}
 	if iprange.Start == nil {
-		return ErrNoStartIP
+		results = multierror.Append(results, ErrNoStartIP)
 	}
 	if iprange.End == nil {
-		return ErrNoEndIP
+		results = multierror.Append(results, ErrNoEndIP)
 	}
-	return nil
+	if iprange.Metadata == nil {
+		results = multierror.Append(results, ErrNilMetadata)
+	}
+	return results.ErrorOrNil()
 }
 
 // Save persists an iprange to the database

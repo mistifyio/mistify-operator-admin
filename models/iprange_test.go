@@ -1,6 +1,7 @@
 package models_test
 
 import (
+	"net"
 	"strings"
 	"testing"
 
@@ -60,6 +61,48 @@ func TestIPRangeUnmarshalJSON(t *testing.T) {
 func TestIPRangeDecode(t *testing.T) {
 	iprange := createIPRange(t)
 	checkIPRangeValues(t, iprange)
+}
+
+func TestIPRangeValidate(t *testing.T) {
+	iprange := &models.IPRange{}
+	var err error
+
+	err = iprange.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	h.Assert(t, errContains(models.ErrNoCIDR, err), "expected ErrNoCIDR")
+	h.Assert(t, errContains(models.ErrNoGateway, err), "expected ErrNoGateway")
+	h.Assert(t, errContains(models.ErrNoStartIP, err), "expected ErrNoStartIP")
+	h.Assert(t, errContains(models.ErrNoEndIP, err), "expected ErrNoEndIP")
+	h.Assert(t, errContains(models.ErrNilMetadata, err), "expected ErrNilMetadata")
+
+	iprange.ID = "foobar"
+	err = iprange.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	iprange.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, iprange.Validate()), "did not expect ErrBadID")
+
+	_, cidr, err := net.ParseCIDR("192.168.1.0/24")
+	h.Ok(t, err)
+	iprange.CIDR = cidr
+	h.Assert(t, errDoesNotContain(models.ErrNoCIDR, iprange.Validate()), "did not expect ErrNoCidr")
+
+	iprange.Gateway = net.ParseIP("192.168.1.1")
+	h.Assert(t, errDoesNotContain(models.ErrNoGateway, iprange.Validate()), "did not expect ErrNoGateway")
+
+	iprange.Start = net.ParseIP("192.168.1.10")
+	h.Assert(t, errDoesNotContain(models.ErrNoStartIP, iprange.Validate()), "did not expect ErrNoStartIP")
+
+	iprange.End = net.ParseIP("192.168.1.255")
+	h.Assert(t, errDoesNotContain(models.ErrNoEndIP, iprange.Validate()), "did not expect ErrNoEndIP")
+
+	iprange.Metadata = make(map[string]string)
+	err = iprange.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
 }
 
 func TestIPRangeMarshalJSON(t *testing.T) {

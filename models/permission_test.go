@@ -60,6 +60,38 @@ func TestPermissionDecode(t *testing.T) {
 	checkPermissionValues(t, permission)
 }
 
+func TestPermissionValidate(t *testing.T) {
+	permission := &models.Permission{}
+	var err error
+
+	err = permission.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	h.Assert(t, errContains(models.ErrNoService, err), "expected ErrNoService")
+	h.Assert(t, errContains(models.ErrNoAction, err), "expected ErrNoAction")
+	h.Assert(t, errContains(models.ErrNilMetadata, err), "expected ErrNilMetadata")
+
+	permission.ID = "foobar"
+	err = permission.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	permission.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, permission.Validate()), "did not expect ErrBadID")
+
+	permission.Service = "foobar"
+	h.Assert(t, errDoesNotContain(models.ErrNoService, permission.Validate()), "did not expect ErrNoService")
+
+	permission.Action = "foobar"
+	h.Assert(t, errDoesNotContain(models.ErrNoAction, permission.Validate()), "did not expect ErrNoAction")
+
+	permission.Metadata = make(map[string]string)
+	err = permission.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
+}
+
 func TestPermissionSave(t *testing.T) {
 	permission := createPermission(t)
 	h.Ok(t, permission.Save())

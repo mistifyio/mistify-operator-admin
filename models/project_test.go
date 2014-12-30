@@ -50,6 +50,32 @@ func TestProjectDecode(t *testing.T) {
 	checkProjectValues(t, project)
 }
 
+func TestProjectValidate(t *testing.T) {
+	project := &models.Project{}
+	var err error
+
+	err = project.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	project.ID = "foobar"
+	err = project.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	project.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, project.Validate()), "did not expect ErrBadID")
+
+	project.Name = "foobar"
+	h.Assert(t, errDoesNotContain(models.ErrNoName, project.Validate()), "did not expect ErrNoName")
+
+	project.Metadata = make(map[string]string)
+	err = project.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
+}
+
 func TestProjectSave(t *testing.T) {
 	project := createProject(t)
 	h.Ok(t, project.Save())

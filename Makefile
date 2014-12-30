@@ -33,16 +33,16 @@ test_clean: delete_test_db_user delete_test_db
 test_config: cmd/mistify-operator-admin/testconfig.json
 	@echo "\n===== Test Config =====" && \
 	cd config && \
-	go test
+	go test -cover
 
 test_db: cmd/mistify-operator-admin/testconfig.json
 	@echo "\n===== Test DB =====" && \
 	cd db && \
-	go test
+	go test -cover
 
 test_models: cmd/mistify-operator-admin/testconfig.json
 	@echo "\n===== Test Models =====" && \
 	cd models && \
-	go test
+	go test -cover
 
 test : | test_clean test_setup test_config test_db test_models test_clean

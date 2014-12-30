@@ -52,6 +52,38 @@ func TestUserDecode(t *testing.T) {
 	checkUserValues(t, user)
 }
 
+func TestUserValidate(t *testing.T) {
+	user := &models.User{}
+	var err error
+
+	err = user.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	h.Assert(t, errContains(models.ErrNoUsername, err), "expected ErrNoUsername")
+	h.Assert(t, errContains(models.ErrNoEmail, err), "expected ErrNoEmail")
+	h.Assert(t, errContains(models.ErrNilMetadata, err), "expected ErrNilMetadata")
+
+	user.ID = "foobar"
+	err = user.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	user.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, user.Validate()), "did not expect ErrBadID")
+
+	user.Username = "foobar"
+	h.Assert(t, errDoesNotContain(models.ErrNoUsername, user.Validate()), "did not expect ErrNoUsername")
+
+	user.Email = "foo@bar.com"
+	h.Assert(t, errDoesNotContain(models.ErrNoEmail, user.Validate()), "did not expect ErrNoEmail")
+
+	user.Metadata = make(map[string]string)
+	err = user.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
+}
+
 func TestUserSave(t *testing.T) {
 	user := createUser(t)
 	h.Ok(t, user.Save())

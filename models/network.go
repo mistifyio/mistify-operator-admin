@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -30,19 +31,20 @@ func (network *Network) pkeyName() string {
 
 // Validate ensures the network properties are set correctly
 func (network *Network) Validate() error {
+	var results *multierror.Error
 	if network.ID == "" {
-		return ErrNoID
+		results = multierror.Append(results, ErrNoID)
 	}
 	if uuid.Parse(network.ID) == nil {
-		return ErrBadID
+		results = multierror.Append(results, ErrBadID)
 	}
 	if network.Name == "" {
-		return ErrNoName
+		results = multierror.Append(results, ErrNoName)
 	}
 	if network.Metadata == nil {
-		return ErrNilMetadata
+		results = multierror.Append(results, ErrNilMetadata)
 	}
-	return nil
+	return results.ErrorOrNil()
 }
 
 // Save persists a network to the database

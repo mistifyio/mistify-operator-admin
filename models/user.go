@@ -7,6 +7,7 @@ import (
 	"net/mail"
 
 	"code.google.com/p/go-uuid/uuid"
+	"github.com/hashicorp/go-multierror"
 	"github.com/mistifyio/mistify-operator-admin/db"
 )
 
@@ -32,22 +33,26 @@ func (user *User) pkeyName() string {
 
 // Validate ensures the user properties are set correctly
 func (user *User) Validate() error {
+	var results *multierror.Error
 	if user.ID == "" {
-		return ErrNoID
+		results = multierror.Append(results, ErrNoID)
 	}
 	if uuid.Parse(user.ID) == nil {
-		return ErrBadID
+		results = multierror.Append(results, ErrBadID)
 	}
 	if user.Username == "" {
-		return ErrNoUsername
+		results = multierror.Append(results, ErrNoUsername)
 	}
 	if user.Email == "" {
-		return ErrNoEmail
+		results = multierror.Append(results, ErrNoEmail)
 	}
 	if _, err := mail.ParseAddress(user.Email); err != nil {
-		return err
+		results = multierror.Append(results, err)
 	}
-	return nil
+	if user.Metadata == nil {
+		results = multierror.Append(results, ErrNilMetadata)
+	}
+	return results.ErrorOrNil()
 }
 
 // Save persists the user to the database

@@ -50,6 +50,34 @@ func TestNetworkDecode(t *testing.T) {
 	checkNetworkValues(t, network)
 }
 
+func TestNetworkValidate(t *testing.T) {
+	network := &models.Network{}
+	var err error
+
+	err = network.Validate()
+	h.Assert(t, errContains(models.ErrNoID, err), "expected ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+	h.Assert(t, errContains(models.ErrNoName, err), "expected ErrNoName")
+	h.Assert(t, errContains(models.ErrNilMetadata, err), "expected ErrNilMetadata")
+
+	network.ID = "foobar"
+	err = network.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNoID, err), "did not expect ErrNoID")
+	h.Assert(t, errContains(models.ErrBadID, err), "expected ErrBadID")
+
+	network.NewID()
+	h.Assert(t, errDoesNotContain(models.ErrBadID, network.Validate()), "did not expect ErrBadID")
+
+	network.Name = "foobar"
+	h.Assert(t, errDoesNotContain(models.ErrNoName, network.Validate()), "did not expect ErrNoName")
+
+	network.Metadata = make(map[string]string)
+	err = network.Validate()
+	h.Assert(t, errDoesNotContain(models.ErrNilMetadata, err), "did not expect ErrNilMetadata")
+
+	h.Ok(t, err)
+}
+
 func TestNetworkSave(t *testing.T) {
 	network := createNetwork(t)
 	h.Ok(t, network.Save())
