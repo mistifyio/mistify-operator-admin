@@ -138,3 +138,42 @@ func TestListHypervisors(t *testing.T) {
 	checkHypervisorValues(t, hypervisors[0])
 	h.Ok(t, hypervisor.Delete())
 }
+
+func TestHypervisorIPRangeRelations(t *testing.T) {
+	// Prep
+	hypervisor := createHypervisor(t)
+	h.Ok(t, hypervisor.Save())
+	iprange := createIPRange(t)
+	h.Ok(t, iprange.Save())
+
+	// Add
+	h.Ok(t, hypervisor.AddIPRange(iprange))
+
+	// Load
+	h.Ok(t, hypervisor.LoadIPRanges())
+	h.Equals(t, 1, len(hypervisor.IPRanges))
+
+	// Remove
+	h.Ok(t, hypervisor.RemoveIPRange(iprange))
+	h.Ok(t, hypervisor.LoadIPRanges())
+	h.Equals(t, 0, len(hypervisor.IPRanges))
+
+	// Set
+	h.Ok(t, hypervisor.SetIPRanges([]*models.IPRange{iprange}))
+	h.Ok(t, hypervisor.LoadIPRanges())
+	h.Equals(t, 1, len(hypervisor.IPRanges))
+
+	// Lookup hypervisors by iprange
+	hypervisors, err := models.HypervisorsByIPRange(iprange)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(hypervisors))
+
+	// Clear
+	h.Ok(t, hypervisor.SetIPRanges(make([]*models.IPRange, 0)))
+	h.Ok(t, hypervisor.LoadIPRanges())
+	h.Equals(t, 0, len(hypervisor.IPRanges))
+
+	// Cleanup
+	h.Ok(t, iprange.Delete())
+	h.Ok(t, hypervisor.Delete())
+}

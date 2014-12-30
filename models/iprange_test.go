@@ -153,3 +153,71 @@ func TestListIPRanges(t *testing.T) {
 	checkIPRangeValues(t, ipranges[0])
 	h.Ok(t, iprange.Delete())
 }
+
+func TestIPRangeHypervisorRelations(t *testing.T) {
+	// Prep
+	iprange := createIPRange(t)
+	h.Ok(t, iprange.Save())
+	hypervisor := createHypervisor(t)
+	h.Ok(t, hypervisor.Save())
+
+	// Add
+	h.Ok(t, iprange.AddHypervisor(hypervisor))
+
+	// Load
+	h.Ok(t, iprange.LoadHypervisors())
+	h.Equals(t, 1, len(iprange.Hypervisors))
+
+	// Remove
+	h.Ok(t, iprange.RemoveHypervisor(hypervisor))
+	h.Ok(t, iprange.LoadHypervisors())
+	h.Equals(t, 0, len(iprange.Hypervisors))
+
+	// Set
+	h.Ok(t, iprange.SetHypervisors([]*models.Hypervisor{hypervisor}))
+	h.Ok(t, iprange.LoadHypervisors())
+	h.Equals(t, 1, len(iprange.Hypervisors))
+
+	// Lookup ipranges by hypervisors
+	ipranges, err := models.IPRangesByHypervisor(hypervisor)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(ipranges))
+
+	// Clear
+	h.Ok(t, iprange.SetHypervisors(make([]*models.Hypervisor, 0)))
+	h.Ok(t, iprange.LoadHypervisors())
+	h.Equals(t, 0, len(iprange.Hypervisors))
+
+	// Cleanup
+	h.Ok(t, hypervisor.Delete())
+	h.Ok(t, iprange.Delete())
+}
+
+func TestIPRangeNetworkRelations(t *testing.T) {
+	// Prep
+	iprange := createIPRange(t)
+	h.Ok(t, iprange.Save())
+	network := createNetwork(t)
+	h.Ok(t, network.Save())
+
+	// Set
+	h.Ok(t, iprange.SetNetwork(network))
+
+	// Load
+	h.Ok(t, iprange.LoadNetwork())
+	h.Assert(t, iprange.Network != nil, "nil network")
+
+	// Lookup ipranges by networks
+	ipranges, err := models.IPRangesByNetwork(network)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(ipranges))
+
+	// Remove
+	h.Ok(t, iprange.RemoveNetwork(network))
+	h.Ok(t, iprange.LoadNetwork())
+	h.Assert(t, iprange.Network == nil, "non nil network")
+
+	// Cleanup
+	h.Ok(t, network.Delete())
+	h.Ok(t, iprange.Delete())
+}

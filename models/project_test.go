@@ -118,3 +118,81 @@ func TestListProjects(t *testing.T) {
 	checkProjectValues(t, projects[0])
 	h.Ok(t, project.Delete())
 }
+
+func TestProjectPermissionRelations(t *testing.T) {
+	// Prep
+	project := createProject(t)
+	h.Ok(t, project.Save())
+	permission := createPermission(t)
+	h.Ok(t, permission.Save())
+
+	// Add
+	h.Ok(t, project.AddPermission(permission))
+
+	// Load
+	h.Ok(t, project.LoadPermissions())
+	h.Equals(t, 1, len(project.Permissions))
+
+	// Remove
+	h.Ok(t, project.RemovePermission(permission))
+	h.Ok(t, project.LoadPermissions())
+	h.Equals(t, 0, len(project.Permissions))
+
+	// Set
+	h.Ok(t, project.SetPermissions([]*models.Permission{permission}))
+	h.Ok(t, project.LoadPermissions())
+	h.Equals(t, 1, len(project.Permissions))
+
+	// Lookup projects by permission
+	projects, err := models.ProjectsByPermission(permission)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(projects))
+
+	// Clear
+	h.Ok(t, project.SetPermissions(make([]*models.Permission, 0)))
+	h.Ok(t, project.LoadPermissions())
+	h.Equals(t, 0, len(project.Permissions))
+
+	// Cleanup
+	h.Ok(t, permission.Delete())
+	h.Ok(t, project.Delete())
+}
+
+func TestProjectUserRelations(t *testing.T) {
+	// Prep
+	project := createProject(t)
+	h.Ok(t, project.Save())
+	user := createUser(t)
+	h.Ok(t, user.Save())
+
+	// Add
+	h.Ok(t, project.AddUser(user))
+
+	// Load
+	h.Ok(t, project.LoadUsers())
+	h.Equals(t, 1, len(project.Users))
+
+	// Remove
+	h.Ok(t, project.RemoveUser(user))
+	h.Ok(t, project.LoadUsers())
+	h.Equals(t, 0, len(project.Users))
+
+	// Set
+	h.Ok(t, project.SetUsers([]*models.User{user}))
+	h.Ok(t, project.LoadUsers())
+	h.Equals(t, 1, len(project.Users))
+
+	// Lookup projects by user
+	projects, err := models.ProjectsByUser(user)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(projects))
+
+	// Clear
+	h.Ok(t, project.SetUsers(make([]*models.User, 0)))
+	h.Ok(t, project.LoadUsers())
+	h.Equals(t, 0, len(project.Users))
+
+	// Cleanup
+	h.Ok(t, user.Delete())
+	h.Ok(t, project.Delete())
+}

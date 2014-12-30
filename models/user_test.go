@@ -126,3 +126,42 @@ func TestListUsers(t *testing.T) {
 	checkUserValues(t, users[0])
 	h.Ok(t, user.Delete())
 }
+
+func TestUserProjectRelations(t *testing.T) {
+	// Prep
+	user := createUser(t)
+	h.Ok(t, user.Save())
+	project := createProject(t)
+	h.Ok(t, project.Save())
+
+	// Add
+	h.Ok(t, user.AddProject(project))
+
+	// Load
+	h.Ok(t, user.LoadProjects())
+	h.Equals(t, 1, len(user.Projects))
+
+	// Remove
+	h.Ok(t, user.RemoveProject(project))
+	h.Ok(t, user.LoadProjects())
+	h.Equals(t, 0, len(user.Projects))
+
+	// Set
+	h.Ok(t, user.SetProjects([]*models.Project{project}))
+	h.Ok(t, user.LoadProjects())
+	h.Equals(t, 1, len(user.Projects))
+
+	// Lookup users by project
+	users, err := models.UsersByProject(project)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(users))
+
+	// Clear
+	h.Ok(t, user.SetProjects(make([]*models.Project, 0)))
+	h.Ok(t, user.LoadProjects())
+	h.Equals(t, 0, len(user.Projects))
+
+	// Cleanup
+	h.Ok(t, project.Delete())
+	h.Ok(t, user.Delete())
+}

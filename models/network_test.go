@@ -120,3 +120,42 @@ func TestListNetworks(t *testing.T) {
 	checkNetworkValues(t, networks[0])
 	h.Ok(t, network.Delete())
 }
+
+func TestNetworkIPRangeRelations(t *testing.T) {
+	// Prep
+	network := createNetwork(t)
+	h.Ok(t, network.Save())
+	iprange := createIPRange(t)
+	h.Ok(t, iprange.Save())
+
+	// Add
+	h.Ok(t, network.AddIPRange(iprange))
+
+	// Load
+	h.Ok(t, network.LoadIPRanges())
+	h.Equals(t, 1, len(network.IPRanges))
+
+	// Remove
+	h.Ok(t, network.RemoveIPRange(iprange))
+	h.Ok(t, network.LoadIPRanges())
+	h.Equals(t, 0, len(network.IPRanges))
+
+	// Set
+	h.Ok(t, network.SetIPRanges([]*models.IPRange{iprange}))
+	h.Ok(t, network.LoadIPRanges())
+	h.Equals(t, 1, len(network.IPRanges))
+
+	// Lookup networks by iprange
+	networks, err := models.NetworksByIPRange(iprange)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(networks))
+
+	// Clear
+	h.Ok(t, network.SetIPRanges(make([]*models.IPRange, 0)))
+	h.Ok(t, network.LoadIPRanges())
+	h.Equals(t, 0, len(network.IPRanges))
+
+	// Cleanup
+	h.Ok(t, iprange.Delete())
+	h.Ok(t, network.Delete())
+}

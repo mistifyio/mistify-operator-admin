@@ -134,3 +134,42 @@ func TestListPermissions(t *testing.T) {
 	checkPermissionValues(t, permissions[0])
 	h.Ok(t, permission.Delete())
 }
+
+func TestPermissionProjectRelations(t *testing.T) {
+	// Prep
+	permission := createPermission(t)
+	h.Ok(t, permission.Save())
+	project := createProject(t)
+	h.Ok(t, project.Save())
+
+	// Add
+	h.Ok(t, permission.AddProject(project))
+
+	// Load
+	h.Ok(t, permission.LoadProjects())
+	h.Equals(t, 1, len(permission.Projects))
+
+	// Remove
+	h.Ok(t, permission.RemoveProject(project))
+	h.Ok(t, permission.LoadProjects())
+	h.Equals(t, 0, len(permission.Projects))
+
+	// Set
+	h.Ok(t, permission.SetProjects([]*models.Project{project}))
+	h.Ok(t, permission.LoadProjects())
+	h.Equals(t, 1, len(permission.Projects))
+
+	// Lookup permissions by project
+	permissions, err := models.PermissionsByProject(project)
+	h.Ok(t, err)
+	h.Equals(t, 1, len(permissions))
+
+	// Clear
+	h.Ok(t, permission.SetProjects(make([]*models.Project, 0)))
+	h.Ok(t, permission.LoadProjects())
+	h.Equals(t, 0, len(permission.Projects))
+
+	// Cleanup
+	h.Ok(t, project.Delete())
+	h.Ok(t, permission.Delete())
+}

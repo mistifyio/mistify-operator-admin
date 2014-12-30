@@ -284,6 +284,8 @@ func (iprange *IPRange) LoadNetwork() error {
 	}
 	if len(networks) > 0 {
 		iprange.Network = networks[0]
+	} else {
+		iprange.Network = nil
 	}
 	return nil
 }

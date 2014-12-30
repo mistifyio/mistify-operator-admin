@@ -262,7 +262,7 @@ func UsersByProject(project *Project) ([]*User, error) {
 		return nil, err
 	}
 	sql := `
-	SELECT u.user_id, u.username, u.email
+	SELECT u.user_id, u.username, u.email, u.metadata
 	FROM users u
 	JOIN projects_users pu ON u.user_id = pu.user_id
 	WHERE pu.project_id = $1
