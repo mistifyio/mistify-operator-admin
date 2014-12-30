@@ -12,7 +12,12 @@ var configFileName = "../cmd/mistify-operator-admin/testconfig.json"
 
 func TestConnect(t *testing.T) {
 	config.Load(configFileName)
-	db, err := db.Connect(nil)
+	d, err := db.Connect(nil)
 	h.Ok(t, err)
-	h.Ok(t, db.Ping())
+	h.Ok(t, d.Ping())
+
+	// Reuse existing
+	d2, err := db.Connect(nil)
+	h.Ok(t, err)
+	h.Equals(t, d, d2)
 }
