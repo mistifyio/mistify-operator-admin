@@ -60,7 +60,7 @@ func TestConfigSetNamespace(t *testing.T) {
 	h.Equals(t, "bang", ns["baz"])
 }
 
-func TestingConfigDeleteNamespace(t *testing.T) {
+func TestConfigDeleteNamespace(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	c.SetNamespace("ns", map[string]string{"baz": "bang"})
@@ -69,7 +69,7 @@ func TestingConfigDeleteNamespace(t *testing.T) {
 	h.Equals(t, 0, len(ns))
 }
 
-func TestingConfigGetValue(t *testing.T) {
+func TestConfigGetValue(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	val, ok := c.GetValue("foobar", "baz")
@@ -79,7 +79,7 @@ func TestingConfigGetValue(t *testing.T) {
 	h.Equals(t, false, ok)
 }
 
-func TestingConfigSetValue(t *testing.T) {
+func TestConfigSetValue(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	c.SetValue("foobar", "baz", "bang")
@@ -88,7 +88,7 @@ func TestingConfigSetValue(t *testing.T) {
 	h.Equals(t, "bang", val)
 }
 
-func TestingConfigDeleteValue(t *testing.T) {
+func TestConfigDeleteValue(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	c.SetValue("foobar", "baz2", "bang")
@@ -97,7 +97,7 @@ func TestingConfigDeleteValue(t *testing.T) {
 	h.Equals(t, false, ok)
 }
 
-func TestingConfigMerge(t *testing.T) {
+func TestConfigMerge(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	c.SetValue("foobar", "baz2", "bang")
@@ -113,16 +113,14 @@ func TestingConfigMerge(t *testing.T) {
 	h.Equals(t, "bang", val)
 }
 
-func TestingConfigSave(t *testing.T) {
+func TestConfigSave(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	c.SetValue("foobar", "baz", "bang")
-	val, ok := c.GetValue("foobar", "baz")
-	h.Equals(t, true, ok)
-	h.Equals(t, "bang", val)
+	h.Ok(t, c.Save())
 }
 
-func TestingConfigLoad(t *testing.T) {
+func TestConfigLoad(t *testing.T) {
 	config.Load(configFileName)
 	c := models.NewConfig()
 	c.Load()
@@ -131,7 +129,7 @@ func TestingConfigLoad(t *testing.T) {
 	h.Equals(t, "bang", val)
 }
 
-func TestingConfigDecode(t *testing.T) {
+func TestConfigDecode(t *testing.T) {
 	config.Load(configFileName)
 	r := strings.NewReader(configJSON)
 	c := models.NewConfig()
