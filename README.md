@@ -9,6 +9,10 @@ All data is datacenter specific unless otherwise specified. All ids are uuids un
 
 List results are JSON arrays of of the particular objects (e.g. GET /hypervisors returns an array of Hypervisor objects). Single get and create results areturn the particular object. Relation results return empty objects.
 
+## Testing
+
+Run `make test`. This will create the necessary test database and db user, run the tests for the various subpackages, and then clean up the database and db user. The clean happens at the beginning and the end, so there is no need to explicitly run `make test_clean` after a failed test run before the next.
+
 ## API Endpoints
 
 ### Config
