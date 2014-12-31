@@ -13,7 +13,6 @@ func RegisterConfigRoutes(prefix string, router *mux.Router) {
 	router.HandleFunc(prefix, GetConfig).Methods("GET")
 	router.HandleFunc(prefix, SetConfig).Methods("PUT")
 	router.HandleFunc(prefix, UpdateConfig).Methods("PATCH")
-	router.HandleFunc(prefix, UpdateConfig).Methods("PATCH")
 	sub := router.PathPrefix(prefix).Subrouter()
 	sub.HandleFunc("/{namespace}", GetConfigNamespace).Methods("GET")
 	sub.HandleFunc("/{namespace}", SetConfigNamespace).Methods("PUT")
