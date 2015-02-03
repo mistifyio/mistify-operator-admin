@@ -8,10 +8,12 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/bakins/go-metrics-middleware"
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 )
 
 type (
@@ -34,6 +36,9 @@ func Run(port uint) error {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
+	m, _ := metrics.GetObject(nil)
+	mw := mmw.New(m)
+
 	// Common middleware applied to every request
 	commonMiddleware := alice.New(
 		func(h http.Handler) http.Handler {
@@ -43,6 +48,7 @@ func Run(port uint) error {
 		func(h http.Handler) http.Handler {
 			return recovery.Handler(os.Stderr, h, true)
 		},
+		mw.HandlerWrapper("foo"),
 	)
 
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass
