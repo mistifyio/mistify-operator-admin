@@ -4,6 +4,7 @@ package operator
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
@@ -36,7 +37,10 @@ func Run(port uint) error {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
-	m, _ := metrics.GetObject(nil)
+	m, err := metrics.GetObject(nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	mw := mmw.New(m)
 
 	// Common middleware applied to every request
