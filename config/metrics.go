@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"time"
 
 	gmetrics "github.com/armon/go-metrics"
@@ -28,9 +27,9 @@ type Metrics struct {
 	SinkType             string `json:"sink_type"`
 	ServiceName          string `json:"service_name"`
 	HostName             string `json:"host_name"`
-	EnableHostname       string `json:"enable_hostname"`
-	EnableRuntimeMetrics string `json:"enable_runtime_metrics"`
-	EnableTypePrefix     string `json:"enable_type_prefix"`
+	EnableHostname       bool   `json:"enable_hostname"`
+	EnableRuntimeMetrics bool   `json:"enable_runtime_metrics"`
+	EnableTypePrefix     bool   `json:"enable_type_prefix"`
 	TimerGranularity     string `json:"timer_granularity"`
 	ProfileInterval      string `json:"profile_interval"`
 }
@@ -54,7 +53,7 @@ func (metrics *Metrics) Validate() error {
 }
 
 // MetricsObjectConfig generates the config object used by go-metrics
-func (self *Metrics) MetricsObjectConfig() gmetrics.Config {
+func (self *Metrics) MetricsObjectConfig() *gmetrics.Config {
 	metricsConfig := gmetrics.DefaultConfig(self.ServiceName)
 	myHostName := self.HostName
 	if myHostName != "" && myHostName != "auto" {
