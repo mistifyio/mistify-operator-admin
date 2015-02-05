@@ -1,19 +1,15 @@
 package config
 
 import (
+	"regexp"
+	"strconv"
 	"time"
 
-	gmetrics "github.com/armon/go-metrics"
 	"github.com/hashicorp/go-multierror"
 )
 
-// Sink type options
-var sinkTypes = map[string]bool{
-	"Test": true,
-}
-
 // Duration options
-var durations = map[string]time.Duration{
+var Durations = map[string]time.Duration{
 	"Nanosecond":  time.Nanosecond,
 	"Microsecond": time.Microsecond,
 	"Millisecond": time.Millisecond,
@@ -24,45 +20,65 @@ var durations = map[string]time.Duration{
 
 // Metrics is the JSON structure and validation for metrics configuration
 type Metrics struct {
-	SinkType             string `json:"sink_type"`
-	ServiceName          string `json:"service_name"`
-	HostName             string `json:"host_name"`
-	EnableHostname       bool   `json:"enable_hostname"`
-	EnableRuntimeMetrics bool   `json:"enable_runtime_metrics"`
-	EnableTypePrefix     bool   `json:"enable_type_prefix"`
-	TimerGranularity     string `json:"timer_granularity"`
-	ProfileInterval      string `json:"profile_interval"`
+	ServiceName          string       `json:"service_name"`
+	HostName             string       `json:"host_name"`
+	EnableHostname       bool         `json:"enable_hostname"`
+	EnableRuntimeMetrics bool         `json:"enable_runtime_metrics"`
+	EnableTypePrefix     bool         `json:"enable_type_prefix"`
+	TimerGranularity     string       `json:"timer_granularity"`
+	ProfileInterval      string       `json:"profile_interval"`
+	Sinks                []MetricSink `json:"sinks"`
 }
 
 // Validate ensures that the metrics configuration is reasonable
-func (metrics *Metrics) Validate() error {
+func (self *Metrics) Validate() error {
 	var result *multierror.Error
-	if _, ok := sinkTypes[metrics.SinkType]; !ok {
-		result = multierror.Append(result, ErrMetricsBadSinkType)
-	}
-	if metrics.ServiceName == "" {
+	if self.ServiceName == "" {
 		result = multierror.Append(result, ErrMetricsNoServiceName)
 	}
-	if _, ok := durations[metrics.TimerGranularity]; !ok {
+	if _, err := ParseDuration(self.TimerGranularity); err != nil {
 		result = multierror.Append(result, ErrMetricsBadTimerGranularity)
 	}
-	if _, ok := durations[metrics.ProfileInterval]; !ok {
+	if _, err := ParseDuration(self.ProfileInterval); err != nil {
 		result = multierror.Append(result, ErrMetricsBadProfileInterval)
+	}
+	for _, sink := range self.Sinks {
+		err := sink.Validate()
+		if err != nil {
+			result = multierror.Append(result, err)
+		}
 	}
 	return result.ErrorOrNil()
 }
 
-// MetricsObjectConfig generates the config object used by go-metrics
-func (self *Metrics) MetricsObjectConfig() *gmetrics.Config {
-	metricsConfig := gmetrics.DefaultConfig(self.ServiceName)
-	myHostName := self.HostName
-	if myHostName != "" && myHostName != "auto" {
-		metricsConfig.HostName = myHostName
+// TimerGranularityDuration parses the "TimerGranularity" option and returns a time duration object
+func (self *Metrics) TimerGranularityDuration() time.Duration {
+	dur, _ := ParseDuration(self.TimerGranularity)
+	return dur
+}
+
+// ProfileIntervalDuration parses the "ProfileInterval" option and returns a time duration object
+func (self *Metrics) ProfileIntervalDuration() time.Duration {
+	dur, _ := ParseDuration(self.ProfileInterval)
+	return dur
+}
+
+// ParseDuration takes a string and returns a time.Duration object
+func ParseDuration(durstring string) (time.Duration, error) {
+	re := regexp.MustCompile("^([0-9]*)\\*([A-Za-z]+)$")
+	matches := re.FindStringSubmatch(durstring)
+	if matches == nil {
+		return time.Nanosecond, ErrMetricsBadDuration
 	}
-	metricsConfig.EnableHostname = self.EnableHostname
-	metricsConfig.EnableRuntimeMetrics = self.EnableRuntimeMetrics
-	metricsConfig.EnableTypePrefix = self.EnableTypePrefix
-	metricsConfig.TimerGranularity = durations[self.TimerGranularity]
-	metricsConfig.ProfileInterval = durations[self.ProfileInterval]
-	return metricsConfig
+	var number int
+	if matches[1] == "" {
+		number = 1
+	} else {
+		number, _ = strconv.Atoi(matches[1])
+	}
+	var duration, ok = Durations[matches[2]]
+	if !ok {
+		return time.Nanosecond, ErrMetricsBadDuration
+	}
+	return time.Duration(number) * duration, nil
 }

@@ -52,7 +52,7 @@ func Run(port uint) error {
 		func(h http.Handler) http.Handler {
 			return recovery.Handler(os.Stderr, h, true)
 		},
-		mw.HandlerWrapper("foo"),
+		mw.HandlerWrapper("OPERATOR-API"),
 	)
 
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass

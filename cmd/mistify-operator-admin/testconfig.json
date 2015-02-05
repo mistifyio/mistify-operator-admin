@@ -8,7 +8,13 @@
         "port": 5432
     },
     "metrics": {
-        "sink_type": "Test",
+        "sinks": [
+            {
+                "sink_type": "Test",
+                "interval": "10*Second",
+                "retain": "5*Minute"
+            }
+        ],
         "service_name": "operator-admin",
         "host_name": "",
         "enable_hostname": true,
