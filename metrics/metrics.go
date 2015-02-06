@@ -15,14 +15,8 @@ var metricsObjects map[string]*gmetrics.Metrics = make(map[string]*gmetrics.Metr
 var mutex sync.Mutex
 
 // Get a metrics object with a particular config, or reuse one that matches
-func GetObject(apiConfig *config.Metrics) (*gmetrics.Metrics, error) {
-	// Use the loaded default if one is not provided
-	if apiConfig == nil {
-		conf := config.Get()
-		apiConfig = &conf.Metrics
-	}
-
-	// Use the json config to look up the metrics object
+func GetObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
+	apiConfig = fetchConfig(apiConfig)
 	lookup, err := json.Marshal(apiConfig)
 	if err != nil {
 		return nil, err
@@ -31,31 +25,51 @@ func GetObject(apiConfig *config.Metrics) (*gmetrics.Metrics, error) {
 	if ok {
 		return metricsObj, nil
 	}
-
-	// Make sure multiple processes don't step on each others' toes
-	mutex.Lock()
-	defer mutex.Unlock()
-
-	// Build the object and store it
-	metricsObj, err = buildMetricsObject(apiConfig)
+	metricsObj, err = buildMetricsObject(apiConfig, overrideSink)
 	if err != nil {
 		return nil, err
 	}
 	metricsObjects[string(lookup)] = metricsObj
-
 	return metricsObj, nil
 }
 
+// Get a new metrics object with a particular config
+func NewObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
+	apiConfig = fetchConfig(apiConfig)
+	mutex.Lock()
+	defer mutex.Unlock()
+	metricsObj, err := buildMetricsObject(apiConfig, overrideSink)
+	if err != nil {
+		return nil, err
+	}
+	return metricsObj, nil
+}
+
+// fetchConfig gets the config from arguments or loads the default if one is not provided
+func fetchConfig(apiConfig *config.Metrics) *config.Metrics {
+	if apiConfig == nil {
+		conf := config.Get()
+		apiConfig = &conf.Metrics
+	}
+	return apiConfig
+}
+
 // buildMetricsObject generates the metrics object defined by the config
-func buildMetricsObject(apiConfig *config.Metrics) (*gmetrics.Metrics, error) {
+func buildMetricsObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
 	metricsConfig := buildMetricsObjectConfig(apiConfig)
-	mainSink := make(gmetrics.FanoutSink, len(apiConfig.Sinks))
-	for i, sinkConfig := range apiConfig.Sinks {
-		sink, err := buildSink(sinkConfig)
-		if err != nil {
-			return nil, err
+	var mainSink gmetrics.FanoutSink
+	if overrideSink != nil {
+		mainSink = make(gmetrics.FanoutSink, 1)
+		mainSink[0] = overrideSink
+	} else {
+		mainSink = make(gmetrics.FanoutSink, len(apiConfig.Sinks))
+		for i, sinkConfig := range apiConfig.Sinks {
+			sink, err := buildSink(sinkConfig)
+			if err != nil {
+				return nil, err
+			}
+			mainSink[i] = sink
 		}
-		mainSink[i] = sink
 	}
 	return gmetrics.New(metricsConfig, mainSink)
 }
