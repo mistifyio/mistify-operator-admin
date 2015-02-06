@@ -18,13 +18,23 @@ var Durations = map[string]time.Duration{
 	"Hour":        time.Hour,
 }
 
+// Enable flag options
+var EnableFlags = map[string]bool{
+	"true":  true,
+	"True":  true,
+	"TRUE":  true,
+	"false": false,
+	"False": false,
+	"FALSE": false,
+}
+
 // Metrics is the JSON structure and validation for metrics configuration
 type Metrics struct {
 	ServiceName          string       `json:"service_name"`
 	HostName             string       `json:"host_name"`
-	EnableHostname       bool         `json:"enable_hostname"`
-	EnableRuntimeMetrics bool         `json:"enable_runtime_metrics"`
-	EnableTypePrefix     bool         `json:"enable_type_prefix"`
+	EnableHostname       string       `json:"enable_hostname"`
+	EnableRuntimeMetrics string       `json:"enable_runtime_metrics"`
+	EnableTypePrefix     string       `json:"enable_type_prefix"`
 	TimerGranularity     string       `json:"timer_granularity"`
 	ProfileInterval      string       `json:"profile_interval"`
 	Sinks                []MetricSink `json:"sinks"`
@@ -36,11 +46,30 @@ func (self *Metrics) Validate() error {
 	if self.ServiceName == "" {
 		result = multierror.Append(result, ErrMetricsNoServiceName)
 	}
-	if _, err := ParseDuration(self.TimerGranularity); err != nil {
-		result = multierror.Append(result, ErrMetricsBadTimerGranularity)
+	if self.EnableHostname != "" {
+		if _, ok := EnableFlags[self.EnableHostname]; !ok {
+			result = multierror.Append(result, ErrMetricsBadEnableFlag)
+		}
 	}
-	if _, err := ParseDuration(self.ProfileInterval); err != nil {
-		result = multierror.Append(result, ErrMetricsBadProfileInterval)
+	if self.EnableRuntimeMetrics != "" {
+		if _, ok := EnableFlags[self.EnableRuntimeMetrics]; !ok {
+			result = multierror.Append(result, ErrMetricsBadEnableFlag)
+		}
+	}
+	if self.EnableTypePrefix != "" {
+		if _, ok := EnableFlags[self.EnableTypePrefix]; !ok {
+			result = multierror.Append(result, ErrMetricsBadEnableFlag)
+		}
+	}
+	if self.TimerGranularity != "" {
+		if _, err := ParseDuration(self.TimerGranularity); err != nil {
+			result = multierror.Append(result, ErrMetricsBadTimerGranularity)
+		}
+	}
+	if self.ProfileInterval != "" {
+		if _, err := ParseDuration(self.ProfileInterval); err != nil {
+			result = multierror.Append(result, ErrMetricsBadProfileInterval)
+		}
 	}
 	for _, sink := range self.Sinks {
 		err := sink.Validate()

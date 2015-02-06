@@ -17,9 +17,6 @@
         ],
         "service_name": "operator-admin",
         "host_name": "",
-        "enable_hostname": true,
-        "enable_runtime_metrics": true,
-        "enable_type_prefix": false,
         "timer_granularity": "Millisecond",
         "profile_interval": "Second"
     },

@@ -10,6 +10,7 @@ var ErrDBBadPort = errors.New("missing or invalid database port")
 
 var ErrMetricsBadSinkType = errors.New("missing or invalid sink type")
 var ErrMetricsNoServiceName = errors.New("missing service name")
+var ErrMetricsBadEnableFlag = errors.New("invalid enable flag")
 var ErrMetricsBadTimerGranularity = errors.New("invalid duration for timer granularity")
 var ErrMetricsBadProfileInterval = errors.New("invalid duration for profile interval")
 var ErrMetricsBadInmemInterval = errors.New("missing interval for inmem sink")

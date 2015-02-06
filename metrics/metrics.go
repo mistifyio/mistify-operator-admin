@@ -81,11 +81,21 @@ func buildMetricsObjectConfig(apiConfig *config.Metrics) *gmetrics.Config {
 	if myHostName != "" && myHostName != "auto" {
 		metricsConfig.HostName = myHostName
 	}
-	metricsConfig.EnableHostname = apiConfig.EnableHostname
-	metricsConfig.EnableRuntimeMetrics = apiConfig.EnableRuntimeMetrics
-	metricsConfig.EnableTypePrefix = apiConfig.EnableTypePrefix
-	metricsConfig.TimerGranularity = apiConfig.TimerGranularityDuration()
-	metricsConfig.ProfileInterval = apiConfig.ProfileIntervalDuration()
+	if apiConfig.EnableTypePrefix != "" {
+		metricsConfig.EnableHostname = config.EnableFlags[apiConfig.EnableHostname]
+	}
+	if apiConfig.EnableRuntimeMetrics != "" {
+		metricsConfig.EnableRuntimeMetrics = config.EnableFlags[apiConfig.EnableRuntimeMetrics]
+	}
+	if apiConfig.EnableTypePrefix != "" {
+		metricsConfig.EnableTypePrefix = config.EnableFlags[apiConfig.EnableTypePrefix]
+	}
+	if apiConfig.TimerGranularity != "" {
+		metricsConfig.TimerGranularity = apiConfig.TimerGranularityDuration()
+	}
+	if apiConfig.ProfileInterval != "" {
+		metricsConfig.ProfileInterval = apiConfig.ProfileIntervalDuration()
+	}
 	return metricsConfig
 }
 
