@@ -37,7 +37,7 @@ func Run(port uint) error {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
-	m, err := metrics.GetObject(nil)
+	m, err := metrics.GetObject(nil, nil)
 	if err != nil {
 		log.Fatal(err)
 	}
