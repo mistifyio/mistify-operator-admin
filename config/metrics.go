@@ -74,27 +74,27 @@ func (self *Metrics) Validate() error {
 	for _, sink := range self.Sinks {
 		err := sink.Validate()
 		if err != nil {
-			result = multierror.Append(result, err)
+			for _, e := range err.(*multierror.Error).WrappedErrors() {
+				result = multierror.Append(result, e)
+			}
 		}
 	}
 	return result.ErrorOrNil()
 }
 
 // TimerGranularityDuration parses the "TimerGranularity" option and returns a time duration object
-func (self *Metrics) TimerGranularityDuration() time.Duration {
-	dur, _ := ParseDuration(self.TimerGranularity)
-	return dur
+func (self *Metrics) TimerGranularityDuration() (time.Duration, error) {
+	return ParseDuration(self.TimerGranularity)
 }
 
 // ProfileIntervalDuration parses the "ProfileInterval" option and returns a time duration object
-func (self *Metrics) ProfileIntervalDuration() time.Duration {
-	dur, _ := ParseDuration(self.ProfileInterval)
-	return dur
+func (self *Metrics) ProfileIntervalDuration() (time.Duration, error) {
+	return ParseDuration(self.ProfileInterval)
 }
 
 // ParseDuration takes a string and returns a time.Duration object
 func ParseDuration(durstring string) (time.Duration, error) {
-	re := regexp.MustCompile("^([0-9]*)\\*([A-Za-z]+)$")
+	re := regexp.MustCompile("^([0-9]*)\\*?([A-Za-z]+)$")
 	matches := re.FindStringSubmatch(durstring)
 	if matches == nil {
 		return time.Nanosecond, ErrMetricsBadDuration

@@ -34,7 +34,7 @@ func (self *MetricSink) Validate() error {
 			result = multierror.Append(result, ErrMetricsBadInmemInterval)
 		}
 		if _, err := ParseDuration(self.Retain); err != nil {
-			result = multierror.Append(result, ErrMetricsBadProfileRetain)
+			result = multierror.Append(result, ErrMetricsBadInmemRetain)
 		}
 	}
 	if self.SinkType == "Statsd" || self.SinkType == "Statsite" {
@@ -46,13 +46,11 @@ func (self *MetricSink) Validate() error {
 }
 
 // IntervalDuration parses the "Interval" option and returns a time duration object
-func (self *MetricSink) IntervalDuration() time.Duration {
-	dur, _ := ParseDuration(self.Interval)
-	return dur
+func (self *MetricSink) IntervalDuration() (time.Duration, error) {
+	return ParseDuration(self.Interval)
 }
 
 // RetainDuration parses the "Retain" option and returns a time duration object
-func (self *MetricSink) RetainDuration() time.Duration {
-	dur, _ := ParseDuration(self.Retain)
-	return dur
+func (self *MetricSink) RetainDuration() (time.Duration, error) {
+	return ParseDuration(self.Retain)
 }

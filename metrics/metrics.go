@@ -91,10 +91,12 @@ func buildMetricsObjectConfig(apiConfig *config.Metrics) *gmetrics.Config {
 		metricsConfig.EnableTypePrefix = config.EnableFlags[apiConfig.EnableTypePrefix]
 	}
 	if apiConfig.TimerGranularity != "" {
-		metricsConfig.TimerGranularity = apiConfig.TimerGranularityDuration()
+		duration, _ := apiConfig.TimerGranularityDuration()
+		metricsConfig.TimerGranularity = duration
 	}
 	if apiConfig.ProfileInterval != "" {
-		metricsConfig.ProfileInterval = apiConfig.ProfileIntervalDuration()
+		duration, _ := apiConfig.ProfileIntervalDuration()
+		metricsConfig.ProfileInterval = duration
 	}
 	return metricsConfig
 }
@@ -116,11 +118,15 @@ func buildSink(sinkConfig config.MetricSink) (gmetrics.MetricSink, error) {
 		return sink, nil
 	}
 	if sinkConfig.SinkType == "Inmem" {
-		sink := gmetrics.NewInmemSink(sinkConfig.IntervalDuration(), sinkConfig.RetainDuration())
+		interval, _ := sinkConfig.IntervalDuration()
+		retain, _ := sinkConfig.RetainDuration()
+		sink := gmetrics.NewInmemSink(interval, retain)
 		return sink, nil
 	}
 	if sinkConfig.SinkType == "Test" {
-		sink := gmetrics.NewInmemSink(sinkConfig.IntervalDuration(), sinkConfig.RetainDuration())
+		interval, _ := sinkConfig.IntervalDuration()
+		retain, _ := sinkConfig.RetainDuration()
+		sink := gmetrics.NewInmemSink(interval, retain)
 		gmetrics.NewInmemSignal(sink, syscall.SIGQUIT, os.Stdout)
 		return sink, nil
 	}
