@@ -25,6 +25,8 @@ func GetObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gm
 	if ok {
 		return metricsObj, nil
 	}
+	mutex.Lock()
+	defer mutex.Unlock()
 	metricsObj, err = buildMetricsObject(apiConfig, overrideSink)
 	if err != nil {
 		return nil, err
@@ -36,8 +38,6 @@ func GetObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gm
 // Get a new metrics object with a particular config
 func NewObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
 	apiConfig = fetchConfig(apiConfig)
-	mutex.Lock()
-	defer mutex.Unlock()
 	metricsObj, err := buildMetricsObject(apiConfig, overrideSink)
 	if err != nil {
 		return nil, err
