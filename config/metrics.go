@@ -38,6 +38,7 @@ type Metrics struct {
 	TimerGranularity     string       `json:"timer_granularity"`
 	ProfileInterval      string       `json:"profile_interval"`
 	Sinks                []MetricSink `json:"sinks"`
+	UrlToKey             MetricKeys   `json:"url_to_key"`
 }
 
 // Validate ensures that the metrics configuration is reasonable

@@ -18,7 +18,17 @@
         "service_name": "operator-admin",
         "host_name": "",
         "timer_granularity": "Millisecond",
-        "profile_interval": "Second"
+        "profile_interval": "Second",
+        "url_to_key": {
+            "allowed_chunks": [
+                "ipranges",
+                "hypervisors",
+                "network",
+                "projects",
+                "users",
+                "permissions"
+            ]
+        }
     },
     "mistify": {
         "foobar": {

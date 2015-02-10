@@ -4,12 +4,10 @@ package operator
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"runtime"
 
-	"github.com/bakins/go-metrics-middleware"
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -37,12 +35,6 @@ func Run(port uint) error {
 	router := mux.NewRouter()
 	router.StrictSlash(true)
 
-	m, err := metrics.GetObject(nil, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	mw := mmw.New(m)
-
 	// Common middleware applied to every request
 	commonMiddleware := alice.New(
 		func(h http.Handler) http.Handler {
@@ -52,7 +44,6 @@ func Run(port uint) error {
 		func(h http.Handler) http.Handler {
 			return recovery.Handler(os.Stderr, h, true)
 		},
-		mw.HandlerWrapper("OPERATOR-API"),
 	)
 
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass
@@ -69,6 +60,17 @@ func Run(port uint) error {
 	RegisterUserRoutes("/users", router)
 	RegisterFlavorRoutes("/flavors", router)
 	RegisterConfigRoutes("/config", router)
+
+	// Add metrics middleware
+	mmw, err := metrics.NewMiddleware(nil)
+	if err == nil {
+		fmt.Println("adding middleware")
+		commonMiddleware = commonMiddleware.Append(
+			func(h http.Handler) http.Handler {
+				mmw.Handler = h
+				return mmw
+			})
+	}
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
