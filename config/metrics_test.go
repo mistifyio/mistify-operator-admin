@@ -24,7 +24,7 @@ func TestMetricsValidate(t *testing.T) {
 	err = metrics.Validate()
 	h.Assert(t, errContains(config.ErrMetricsBadTimerGranularity, err), "expected 'bad timer granularity' error")
 
-	metrics.TimerGranularity = "5*Second"
+	metrics.TimerGranularity = "5s"
 	err = metrics.Validate()
 	h.Assert(t, errDoesNotContain(config.ErrMetricsBadTimerGranularity, err), "did not expect 'bad timer granularity' error")
 
@@ -32,7 +32,7 @@ func TestMetricsValidate(t *testing.T) {
 	err = metrics.Validate()
 	h.Assert(t, errContains(config.ErrMetricsBadProfileInterval, err), "expected 'bad profile interval' error")
 
-	metrics.ProfileInterval = "5*Second"
+	metrics.ProfileInterval = "5s"
 	err = metrics.Validate()
 	h.Assert(t, errDoesNotContain(config.ErrMetricsBadProfileInterval, err), "did not expect 'bad profile interval' error")
 
@@ -43,26 +43,15 @@ func TestMetricsValidate(t *testing.T) {
 	h.Assert(t, errContains(config.ErrMetricsBadSinkType, err), "expected 'bad sink type' error")
 }
 
-func TestParseDuration(t *testing.T) {
-	duration, err := config.ParseDuration("foo")
-	h.Assert(t, err == config.ErrMetricsBadDuration, "expected a duration of 'foo' to generate an error")
-	duration, err = config.ParseDuration("Millisecond")
-	h.Assert(t, err == nil, "expected a duration of 'Millisecond' not to generate an error")
-	h.Equals(t, duration, time.Millisecond)
-	duration, err = config.ParseDuration("5*Millisecond")
-	h.Assert(t, err == nil, "expected a duration of '5*Millisecond' not to generate an error")
-	h.Equals(t, duration, 5*time.Millisecond)
-}
-
 func TestTimerGranularityDuration(t *testing.T) {
 	metrics := &config.Metrics{}
 	metrics.TimerGranularity = "foo"
 	duration, err := metrics.TimerGranularityDuration()
-	h.Assert(t, err == config.ErrMetricsBadDuration, "expected a timer granularity of 'foo' to generate an error")
+	h.Assert(t, err != nil, "expected a timer granularity of 'foo' to generate an error")
 
-	metrics.TimerGranularity = "5*Millisecond"
+	metrics.TimerGranularity = "5ms"
 	duration, err = metrics.TimerGranularityDuration()
-	h.Assert(t, err == nil, "expected a timer granularity of '5*Millisecond' not to generate an error")
+	h.Assert(t, err == nil, "expected a timer granularity of '5ms' not to generate an error")
 	h.Equals(t, duration, 5*time.Millisecond)
 }
 
@@ -70,11 +59,11 @@ func TestProfileIntervalDuration(t *testing.T) {
 	metrics := &config.Metrics{}
 	metrics.ProfileInterval = "foo"
 	duration, err := metrics.ProfileIntervalDuration()
-	h.Assert(t, err == config.ErrMetricsBadDuration, "expected a profile interval of 'foo' to generate an error")
+	h.Assert(t, err != nil, "expected a profile interval of 'foo' to generate an error")
 
-	metrics.ProfileInterval = "5*Millisecond"
+	metrics.ProfileInterval = "5ms"
 	duration, err = metrics.ProfileIntervalDuration()
-	h.Assert(t, err == nil, "expected a profile interval of '5*Millisecond' not to generate an error")
+	h.Assert(t, err == nil, "expected a profile interval of '5ms' not to generate an error")
 	h.Equals(t, duration, 5*time.Millisecond)
 }
 

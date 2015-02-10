@@ -28,7 +28,7 @@ func TestMetricSinkValidate(t *testing.T) {
 	err = sink.Validate()
 	h.Assert(t, errContains(config.ErrMetricsBadInmemInterval, err), "expected 'bad in-memory interval' error")
 
-	sink.Interval = "5*Millisecond"
+	sink.Interval = "5ms"
 	err = sink.Validate()
 	h.Assert(t, errDoesNotContain(config.ErrMetricsBadInmemInterval, err), "did not expect 'bad in-memory interval' error")
 
@@ -36,7 +36,7 @@ func TestMetricSinkValidate(t *testing.T) {
 	err = sink.Validate()
 	h.Assert(t, errContains(config.ErrMetricsBadInmemRetain, err), "expected 'bad in-memory retain duration' error")
 
-	sink.Retain = "3*Second"
+	sink.Retain = "3s"
 	err = sink.Validate()
 	h.Assert(t, errDoesNotContain(config.ErrMetricsBadInmemRetain, err), "did not expect 'bad in-memory retain duration' error")
 
@@ -57,11 +57,11 @@ func TestIntervalDuration(t *testing.T) {
 	sink := &config.MetricSink{}
 	sink.Interval = "foo"
 	duration, err := sink.IntervalDuration()
-	h.Assert(t, err == config.ErrMetricsBadDuration, "expected an interval of 'foo' to generate an error")
+	h.Assert(t, err != nil, "expected an interval of 'foo' to generate an error")
 
-	sink.Interval = "5*Millisecond"
+	sink.Interval = "5ms"
 	duration, err = sink.IntervalDuration()
-	h.Assert(t, err == nil, "expected an interval of '5*Millisecond' not to generate an error")
+	h.Assert(t, err == nil, "expected an interval of '5ms' not to generate an error")
 	h.Equals(t, duration, 5*time.Millisecond)
 }
 
@@ -69,11 +69,11 @@ func TestRetainDuration(t *testing.T) {
 	sink := &config.MetricSink{}
 	sink.Retain = "foo"
 	duration, err := sink.RetainDuration()
-	h.Assert(t, err == config.ErrMetricsBadDuration, "expected a retain duration of 'foo' to generate an error")
+	h.Assert(t, err != nil, "expected a retain duration of 'foo' to generate an error")
 
-	sink.Retain = "5*Millisecond"
+	sink.Retain = "5ms"
 	duration, err = sink.RetainDuration()
-	h.Assert(t, err == nil, "expected a retain duration of '5*Millisecond' not to generate an error")
+	h.Assert(t, err == nil, "expected a retain duration of '5ms' not to generate an error")
 	h.Equals(t, duration, 5*time.Millisecond)
 }
 

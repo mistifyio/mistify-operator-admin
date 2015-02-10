@@ -1,8 +1,6 @@
 package config
 
 import (
-	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/hashicorp/go-multierror"
@@ -63,12 +61,12 @@ func (self *Metrics) Validate() error {
 		}
 	}
 	if self.TimerGranularity != "" {
-		if _, err := ParseDuration(self.TimerGranularity); err != nil {
+		if _, err := time.ParseDuration(self.TimerGranularity); err != nil {
 			result = multierror.Append(result, ErrMetricsBadTimerGranularity)
 		}
 	}
 	if self.ProfileInterval != "" {
-		if _, err := ParseDuration(self.ProfileInterval); err != nil {
+		if _, err := time.ParseDuration(self.ProfileInterval); err != nil {
 			result = multierror.Append(result, ErrMetricsBadProfileInterval)
 		}
 	}
@@ -85,30 +83,10 @@ func (self *Metrics) Validate() error {
 
 // TimerGranularityDuration parses the "TimerGranularity" option and returns a time duration object
 func (self *Metrics) TimerGranularityDuration() (time.Duration, error) {
-	return ParseDuration(self.TimerGranularity)
+	return time.ParseDuration(self.TimerGranularity)
 }
 
 // ProfileIntervalDuration parses the "ProfileInterval" option and returns a time duration object
 func (self *Metrics) ProfileIntervalDuration() (time.Duration, error) {
-	return ParseDuration(self.ProfileInterval)
-}
-
-// ParseDuration takes a string and returns a time.Duration object
-func ParseDuration(durstring string) (time.Duration, error) {
-	re := regexp.MustCompile("^([0-9]*)\\*?([A-Za-z]+)$")
-	matches := re.FindStringSubmatch(durstring)
-	if matches == nil {
-		return time.Nanosecond, ErrMetricsBadDuration
-	}
-	var number int
-	if matches[1] == "" {
-		number = 1
-	} else {
-		number, _ = strconv.Atoi(matches[1])
-	}
-	var duration, ok = Durations[matches[2]]
-	if !ok {
-		return time.Nanosecond, ErrMetricsBadDuration
-	}
-	return time.Duration(number) * duration, nil
+	return time.ParseDuration(self.ProfileInterval)
 }

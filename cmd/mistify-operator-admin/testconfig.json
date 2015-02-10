@@ -11,8 +11,8 @@
         "sinks": [
             {
                 "sink_type": "Test",
-                "interval": "10*Second",
-                "retain": "5*Minute"
+                "interval": "10s",
+                "retain": "5m"
             }
         ],
         "service_name": "operator-admin",
