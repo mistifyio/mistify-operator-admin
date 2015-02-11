@@ -8,6 +8,8 @@ import (
 	"os"
 	"runtime"
 
+	gmetrics "github.com/armon/go-metrics"
+	"github.com/bakins/go-metrics-middleware"
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -28,6 +30,12 @@ type (
 		Code    int      `json:"code"`
 		Stack   []string `json:"stack"`
 	}
+
+	// MetricsContext contains information necessary to add metrics to routes
+	MetricsContext struct {
+		metrics    *gmetrics.Metrics
+		middleware *mmw.Middleware
+	}
 )
 
 // Run starts the server
@@ -46,31 +54,25 @@ func Run(port uint) error {
 		},
 	)
 
+	// Spin up a metrics object to send to the routes
+	m, _ := metrics.GetObject(nil, nil)
+	mw := mmw.New(m)
+	mc := MetricsContext{m, mw}
+
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass
 	// a prefixed subrouter to the register functions and have the base path
 	// work cleanly. The register functions need to add a base path handler to
 	// the main router before setting subhandlers on either main or subrouter
 
 	// Register the various routes
-	RegisterPermissionRoutes("/permissions", router)
-	RegisterNetworkRoutes("/networks", router)
-	RegisterIPRangeRoutes("/ipranges", router)
-	RegisterHypervisorRoutes("/hypervisors", router)
-	RegisterProjectRoutes("/projects", router)
-	RegisterUserRoutes("/users", router)
-	RegisterFlavorRoutes("/flavors", router)
-	RegisterConfigRoutes("/config", router)
-
-	// Add metrics middleware
-	mmw, err := metrics.NewMiddleware(nil)
-	if err == nil {
-		fmt.Println("adding middleware")
-		commonMiddleware = commonMiddleware.Append(
-			func(h http.Handler) http.Handler {
-				mmw.Handler = h
-				return mmw
-			})
-	}
+	RegisterPermissionRoutes("/permissions", router, mc)
+	RegisterNetworkRoutes("/networks", router, mc)
+	RegisterIPRangeRoutes("/ipranges", router, mc)
+	RegisterHypervisorRoutes("/hypervisors", router, mc)
+	RegisterProjectRoutes("/projects", router, mc)
+	RegisterUserRoutes("/users", router, mc)
+	RegisterFlavorRoutes("/flavors", router, mc)
+	RegisterConfigRoutes("/config", router, mc)
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),

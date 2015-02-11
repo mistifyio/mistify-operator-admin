@@ -10,17 +10,17 @@ import (
 )
 
 // RegisterUserRoutes registers the user routes and handlers
-func RegisterUserRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListUsers).Methods("GET")
-	router.HandleFunc(prefix, CreateUser).Methods("POST")
+func RegisterUserRoutes(prefix string, router *mux.Router, mc MetricsContext) {
+	router.Handle(prefix, mc.middleware.HandlerFunc(ListUsers, "users.list")).Methods("GET")
+	router.Handle(prefix, mc.middleware.HandlerFunc(CreateUser, "users.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{userID}", GetUser).Methods("GET")
-	sub.HandleFunc("/{userID}", UpdateUser).Methods("PATCH")
-	sub.HandleFunc("/{userID}", DeleteUser).Methods("DELETE")
-	sub.HandleFunc("/{userID}/projects", GetUserProjects).Methods("GET")
-	sub.HandleFunc("/{userID}/projects", SetUserProjects).Methods("PUT")
-	sub.HandleFunc("/{userID}/projects/{projectID}", AddUserProject).Methods("PUT")
-	sub.HandleFunc("/{userID}/projects/{projectID}", RemoveUserProject).Methods("DELETE")
+	sub.Handle("/{userID}", mc.middleware.HandlerFunc(GetUser, "users.get")).Methods("GET")
+	sub.Handle("/{userID}", mc.middleware.HandlerFunc(UpdateUser, "users.update")).Methods("PATCH")
+	sub.Handle("/{userID}", mc.middleware.HandlerFunc(DeleteUser, "users.delete")).Methods("DELETE")
+	sub.Handle("/{userID}/projects", mc.middleware.HandlerFunc(GetUserProjects, "users.projects.get")).Methods("GET")
+	sub.Handle("/{userID}/projects", mc.middleware.HandlerFunc(SetUserProjects, "users.projects.set")).Methods("PUT")
+	sub.Handle("/{userID}/projects/{projectID}", mc.middleware.HandlerFunc(AddUserProject, "users.projects.add")).Methods("PUT")
+	sub.Handle("/{userID}/projects/{projectID}", mc.middleware.HandlerFunc(RemoveUserProject, "users.projects.remove")).Methods("DELETE")
 }
 
 // ListUsers gets a list of all users

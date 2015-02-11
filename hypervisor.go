@@ -11,17 +11,17 @@ import (
 )
 
 // RegisterHypervisorRoutes registers the hypervisor routes and handlers
-func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListHypervisors).Methods("GET")
-	router.HandleFunc(prefix, CreateHypervisor).Methods("POST")
+func RegisterHypervisorRoutes(prefix string, router *mux.Router, mc MetricsContext) {
+	router.Handle(prefix, mc.middleware.HandlerFunc(ListHypervisors, "hypervisors.list")).Methods("GET")
+	router.Handle(prefix, mc.middleware.HandlerFunc(CreateHypervisor, "hypervisors.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{hypervisorID}", GetHypervisor).Methods("GET")
-	sub.HandleFunc("/{hypervisorID}", UpdateHypervisor).Methods("PATCH")
-	sub.HandleFunc("/{hypervisorID}", DeleteHypervisor).Methods("DELETE")
-	sub.HandleFunc("/{hypervisorID}/ipranges", GetHypervisorIPRanges).Methods("GET")
-	sub.HandleFunc("/{hypervisorID}/ipranges", SetHypervisorIPRanges).Methods("PUT")
-	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", AddHypervisorIPRange).Methods("PUT")
-	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", RemoveHypervisorIPRange).Methods("DELETE")
+	sub.Handle("/{hypervisorID}", mc.middleware.HandlerFunc(GetHypervisor, "hypervisors.get")).Methods("GET")
+	sub.Handle("/{hypervisorID}", mc.middleware.HandlerFunc(UpdateHypervisor, "hypervisors.update")).Methods("PATCH")
+	sub.Handle("/{hypervisorID}", mc.middleware.HandlerFunc(DeleteHypervisor, "hypervisors.delete")).Methods("DELETE")
+	sub.Handle("/{hypervisorID}/ipranges", mc.middleware.HandlerFunc(GetHypervisorIPRanges, "hypervisors.ipranges.get")).Methods("GET")
+	sub.Handle("/{hypervisorID}/ipranges", mc.middleware.HandlerFunc(SetHypervisorIPRanges, "hypervisors.ipranges.set")).Methods("PUT")
+	sub.Handle("/{hypervisorID}/ipranges/{iprangeID}", mc.middleware.HandlerFunc(AddHypervisorIPRange, "hypervisors.ipranges.add")).Methods("PUT")
+	sub.Handle("/{hypervisorID}/ipranges/{iprangeID}", mc.middleware.HandlerFunc(RemoveHypervisorIPRange, "hypervisors.ipranges.remove")).Methods("DELETE")
 }
 
 // ListHypervisors gets a list of all hypervisors

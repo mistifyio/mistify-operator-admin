@@ -9,15 +9,15 @@ import (
 )
 
 // RegisterConfigRoutes registers the config routes and handlers
-func RegisterConfigRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, GetConfig).Methods("GET")
-	router.HandleFunc(prefix, SetConfig).Methods("PUT")
-	router.HandleFunc(prefix, UpdateConfig).Methods("PATCH")
+func RegisterConfigRoutes(prefix string, router *mux.Router, mc MetricsContext) {
+	router.Handle(prefix, mc.middleware.HandlerFunc(GetConfig, "config.get")).Methods("GET")
+	router.Handle(prefix, mc.middleware.HandlerFunc(SetConfig, "config.set")).Methods("PUT")
+	router.Handle(prefix, mc.middleware.HandlerFunc(UpdateConfig, "config.update")).Methods("PATCH")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{namespace}", GetConfigNamespace).Methods("GET")
-	sub.HandleFunc("/{namespace}", SetConfigNamespace).Methods("PUT")
-	sub.HandleFunc("/{namespace}", DeleteConfigNamespace).Methods("DELETE")
-	sub.HandleFunc("/{namespace}/{key}", DeleteConfigKey).Methods("DELETE")
+	sub.Handle("/{namespace}", mc.middleware.HandlerFunc(GetConfigNamespace, "config.namespace.get")).Methods("GET")
+	sub.Handle("/{namespace}", mc.middleware.HandlerFunc(SetConfigNamespace, "config.namespace.set")).Methods("PUT")
+	sub.Handle("/{namespace}", mc.middleware.HandlerFunc(DeleteConfigNamespace, "config.namespace.delete")).Methods("DELETE")
+	sub.Handle("/{namespace}/{key}", mc.middleware.HandlerFunc(DeleteConfigKey, "config.namespace.deletekey")).Methods("DELETE")
 }
 
 // GetConfig gets the config

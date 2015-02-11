@@ -11,17 +11,17 @@ import (
 )
 
 // RegisterNetworkRoutes registers the network routes and handlers
-func RegisterNetworkRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListNetworks).Methods("GET")
-	router.HandleFunc(prefix, CreateNetwork).Methods("POST")
+func RegisterNetworkRoutes(prefix string, router *mux.Router, mc MetricsContext) {
+	router.Handle(prefix, mc.middleware.HandlerFunc(ListNetworks, "networks.list")).Methods("GET")
+	router.Handle(prefix, mc.middleware.HandlerFunc(CreateNetwork, "networks.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{networkID}", GetNetwork).Methods("GET")
-	sub.HandleFunc("/{networkID}", UpdateNetwork).Methods("PATCH")
-	sub.HandleFunc("/{networkID}", DeleteNetwork).Methods("DELETE")
-	sub.HandleFunc("/{networkID}/ipranges", GetNetworkIPRanges).Methods("GET")
-	sub.HandleFunc("/{networkID}/ipranges", SetNetworkIPRanges).Methods("PUT")
-	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", AddNetworkIPRange).Methods("PUT")
-	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", RemoveNetworkIPRange).Methods("DELETE")
+	sub.Handle("/{networkID}", mc.middleware.HandlerFunc(GetNetwork, "networks.get")).Methods("GET")
+	sub.Handle("/{networkID}", mc.middleware.HandlerFunc(UpdateNetwork, "networks.update")).Methods("PATCH")
+	sub.Handle("/{networkID}", mc.middleware.HandlerFunc(DeleteNetwork, "networks.delete")).Methods("DELETE")
+	sub.Handle("/{networkID}/ipranges", mc.middleware.HandlerFunc(GetNetworkIPRanges, "networks.ipranges.get")).Methods("GET")
+	sub.Handle("/{networkID}/ipranges", mc.middleware.HandlerFunc(SetNetworkIPRanges, "networks.ipranges.set")).Methods("PUT")
+	sub.Handle("/{networkID}/ipranges/{iprangeID}", mc.middleware.HandlerFunc(AddNetworkIPRange, "networks.ipranges.add")).Methods("PUT")
+	sub.Handle("/{networkID}/ipranges/{iprangeID}", mc.middleware.HandlerFunc(RemoveNetworkIPRange, "networks.ipranges.remove")).Methods("DELETE")
 }
 
 // ListNetworks gets a list of all networks

@@ -10,17 +10,17 @@ import (
 )
 
 // RegisterPermissionRoutes registers the permission routes and handlers
-func RegisterPermissionRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListPermissions).Methods("GET")
-	router.HandleFunc(prefix, CreatePermission).Methods("POST")
+func RegisterPermissionRoutes(prefix string, router *mux.Router, mc MetricsContext) {
+	router.Handle(prefix, mc.middleware.HandlerFunc(ListPermissions, "permissions.list")).Methods("GET")
+	router.Handle(prefix, mc.middleware.HandlerFunc(CreatePermission, "permissions.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{permissionID}", GetPermission).Methods("GET")
-	sub.HandleFunc("/{permissionID}", UpdatePermission).Methods("PATCH")
-	sub.HandleFunc("/{permissionID}", DeletePermission).Methods("DELETE")
-	sub.HandleFunc("/{permissionID}/projects", GetPermissionProjects).Methods("GET")
-	sub.HandleFunc("/{permissionID}/projects", SetPermissionProjects).Methods("PUT")
-	sub.HandleFunc("/{permissionID}/projects/{projectID}", AddPermissionProject).Methods("PUT")
-	sub.HandleFunc("/{permissionID}/projects/{projectID}", RemovePermissionProject).Methods("DELETE")
+	sub.Handle("/{permissionID}", mc.middleware.HandlerFunc(GetPermission, "permissions.get")).Methods("GET")
+	sub.Handle("/{permissionID}", mc.middleware.HandlerFunc(UpdatePermission, "permissions.update")).Methods("PATCH")
+	sub.Handle("/{permissionID}", mc.middleware.HandlerFunc(DeletePermission, "permissions.delete")).Methods("DELETE")
+	sub.Handle("/{permissionID}/projects", mc.middleware.HandlerFunc(GetPermissionProjects, "permissions.projects.get")).Methods("GET")
+	sub.Handle("/{permissionID}/projects", mc.middleware.HandlerFunc(SetPermissionProjects, "permissions.projects.set")).Methods("PUT")
+	sub.Handle("/{permissionID}/projects/{projectID}", mc.middleware.HandlerFunc(AddPermissionProject, "permissions.projects.add")).Methods("PUT")
+	sub.Handle("/{permissionID}/projects/{projectID}", mc.middleware.HandlerFunc(RemovePermissionProject, "permissions.projects.remove")).Methods("DELETE")
 }
 
 // ListPermissions gets a list of all permissions

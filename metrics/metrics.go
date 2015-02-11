@@ -10,17 +10,12 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/config"
 )
 
-type Metrics struct {
-	*gmetrics.Metrics
-	config *config.Metrics
-}
-
 // Keep track of metrics objects
-var metricsObjects map[string]*Metrics = make(map[string]*Metrics)
+var metricsObjects map[string]*gmetrics.Metrics = make(map[string]*gmetrics.Metrics)
 var mutex sync.Mutex
 
 // Get a metrics object with a particular config, or reuse one that matches
-func GetObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*Metrics, error) {
+func GetObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
 	apiConfig = fetchConfig(apiConfig)
 	lookup, err := json.Marshal(apiConfig)
 	if err != nil {
@@ -41,7 +36,7 @@ func GetObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*Me
 }
 
 // Get a new metrics object with a particular config
-func NewObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*Metrics, error) {
+func NewObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
 	apiConfig = fetchConfig(apiConfig)
 	metricsObj, err := buildMetricsObject(apiConfig, overrideSink)
 	if err != nil {
@@ -60,7 +55,7 @@ func fetchConfig(apiConfig *config.Metrics) *config.Metrics {
 }
 
 // buildMetricsObject generates the metrics object defined by the config
-func buildMetricsObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*Metrics, error) {
+func buildMetricsObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricSink) (*gmetrics.Metrics, error) {
 	metricsConfig := buildMetricsObjectConfig(apiConfig)
 	var mainSink gmetrics.FanoutSink
 	if overrideSink != nil {
@@ -80,7 +75,7 @@ func buildMetricsObject(apiConfig *config.Metrics, overrideSink gmetrics.MetricS
 	if err != nil {
 		return nil, err
 	}
-	return &Metrics{m, apiConfig}, nil
+	return m, nil
 }
 
 // buildMetricsObjectConfig generates the config object used by go-metrics
