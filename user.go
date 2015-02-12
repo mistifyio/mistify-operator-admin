@@ -6,21 +6,22 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterUserRoutes registers the user routes and handlers
-func RegisterUserRoutes(prefix string, router *mux.Router, mc MetricsContext) {
-	router.Handle(prefix, mc.middleware.HandlerFunc(ListUsers, "users.list")).Methods("GET")
-	router.Handle(prefix, mc.middleware.HandlerFunc(CreateUser, "users.create")).Methods("POST")
+func RegisterUserRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
+	router.Handle(prefix, mc.Middleware.HandlerFunc(ListUsers, "users.list")).Methods("GET")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateUser, "users.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{userID}", mc.middleware.HandlerFunc(GetUser, "users.get")).Methods("GET")
-	sub.Handle("/{userID}", mc.middleware.HandlerFunc(UpdateUser, "users.update")).Methods("PATCH")
-	sub.Handle("/{userID}", mc.middleware.HandlerFunc(DeleteUser, "users.delete")).Methods("DELETE")
-	sub.Handle("/{userID}/projects", mc.middleware.HandlerFunc(GetUserProjects, "users.projects.get")).Methods("GET")
-	sub.Handle("/{userID}/projects", mc.middleware.HandlerFunc(SetUserProjects, "users.projects.set")).Methods("PUT")
-	sub.Handle("/{userID}/projects/{projectID}", mc.middleware.HandlerFunc(AddUserProject, "users.projects.add")).Methods("PUT")
-	sub.Handle("/{userID}/projects/{projectID}", mc.middleware.HandlerFunc(RemoveUserProject, "users.projects.remove")).Methods("DELETE")
+	sub.Handle("/{userID}", mc.Middleware.HandlerFunc(GetUser, "users.get")).Methods("GET")
+	sub.Handle("/{userID}", mc.Middleware.HandlerFunc(UpdateUser, "users.update")).Methods("PATCH")
+	sub.Handle("/{userID}", mc.Middleware.HandlerFunc(DeleteUser, "users.delete")).Methods("DELETE")
+	sub.Handle("/{userID}/projects", mc.Middleware.HandlerFunc(GetUserProjects, "users.projects.get")).Methods("GET")
+	sub.Handle("/{userID}/projects", mc.Middleware.HandlerFunc(SetUserProjects, "users.projects.set")).Methods("PUT")
+	sub.Handle("/{userID}/projects/{projectID}", mc.Middleware.HandlerFunc(AddUserProject, "users.projects.add")).Methods("PUT")
+	sub.Handle("/{userID}/projects/{projectID}", mc.Middleware.HandlerFunc(RemoveUserProject, "users.projects.remove")).Methods("DELETE")
 }
 
 // ListUsers gets a list of all users

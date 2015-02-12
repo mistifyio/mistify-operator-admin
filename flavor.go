@@ -6,17 +6,18 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterFlavorRoutes registers the flavor routes and handlers
-func RegisterFlavorRoutes(prefix string, router *mux.Router, mc MetricsContext) {
-	router.Handle(prefix, mc.middleware.HandlerFunc(ListFlavors, "flavors.list")).Methods("GET")
-	router.Handle(prefix, mc.middleware.HandlerFunc(CreateFlavor, "flavors.create")).Methods("POST")
+func RegisterFlavorRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
+	router.Handle(prefix, mc.Middleware.HandlerFunc(ListFlavors, "flavors.list")).Methods("GET")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateFlavor, "flavors.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{flavorID}", mc.middleware.HandlerFunc(GetFlavor, "flavors.get")).Methods("GET")
-	sub.Handle("/{flavorID}", mc.middleware.HandlerFunc(UpdateFlavor, "flavors.update")).Methods("PATCH")
-	sub.Handle("/{flavorID}", mc.middleware.HandlerFunc(DeleteFlavor, "flavors.delete")).Methods("DELETE")
+	sub.Handle("/{flavorID}", mc.Middleware.HandlerFunc(GetFlavor, "flavors.get")).Methods("GET")
+	sub.Handle("/{flavorID}", mc.Middleware.HandlerFunc(UpdateFlavor, "flavors.update")).Methods("PATCH")
+	sub.Handle("/{flavorID}", mc.Middleware.HandlerFunc(DeleteFlavor, "flavors.delete")).Methods("DELETE")
 }
 
 // ListFlavors get a list of all flavors

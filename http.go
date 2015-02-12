@@ -8,8 +8,6 @@ import (
 	"os"
 	"runtime"
 
-	gmetrics "github.com/armon/go-metrics"
-	"github.com/bakins/go-metrics-middleware"
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
@@ -30,12 +28,6 @@ type (
 		Code    int      `json:"code"`
 		Stack   []string `json:"stack"`
 	}
-
-	// MetricsContext contains information necessary to add metrics to routes
-	MetricsContext struct {
-		metrics    *gmetrics.Metrics
-		middleware *mmw.Middleware
-	}
 )
 
 // Run starts the server
@@ -54,10 +46,11 @@ func Run(port uint) error {
 		},
 	)
 
-	// Spin up a metrics object to send to the routes
-	m, _ := metrics.GetObject(nil, nil)
-	mw := mmw.New(m)
-	mc := MetricsContext{m, mw}
+	// Metrics context to monitor endpoints
+	mc, err := metrics.GetContext(nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass
 	// a prefixed subrouter to the register functions and have the base path
@@ -73,6 +66,13 @@ func Run(port uint) error {
 	RegisterUserRoutes("/users", router, mc)
 	RegisterFlavorRoutes("/flavors", router, mc)
 	RegisterConfigRoutes("/config", router, mc)
+
+	// Add a metrics route
+	router.Handle("/metrics", commonMiddleware.Append(mc.Middleware.HandlerWrapper("metrics")).ThenFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json; charset=utf-8")
+			json.NewEncoder(w).Encode(mc.MapSink)
+		}))
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),

@@ -12,62 +12,56 @@ import (
 
 var configFileName = "../cmd/mistify-operator-admin/testconfig.json"
 
-// Mock sink type
-// Copied from github.com/armon/go-metrics/sink_test.go
-type MockSink struct {
-	keys [][]string
-	vals []float32
+func TestContext_Build(t *testing.T) {
+	conf := &config.Metrics{}
+	conf.ServiceName = "test-build"
+	mc, err := metrics.NewContext(conf)
+	h.Ok(t, err)
+	h.Equals(t, mc.Metrics.Config.ServiceName, "test-build")
+	h.Equals(t, fmt.Sprintf("%T", *mc.MapSink), "mapsink.MapSink")
+	h.Equals(t, mc.StatsdSink, (*gmetrics.StatsdSink)(nil))
 }
 
-func (m *MockSink) SetGauge(key []string, val float32) {
-	m.keys = append(m.keys, key)
-	m.vals = append(m.vals, val)
-}
-func (m *MockSink) EmitKey(key []string, val float32) {
-	m.keys = append(m.keys, key)
-	m.vals = append(m.vals, val)
-}
-func (m *MockSink) IncrCounter(key []string, val float32) {
-	m.keys = append(m.keys, key)
-	m.vals = append(m.vals, val)
-}
-func (m *MockSink) AddSample(key []string, val float32) {
-	m.keys = append(m.keys, key)
-	m.vals = append(m.vals, val)
+func TestContext_BuildStatsd(t *testing.T) {
+	conf := &config.Metrics{}
+	conf.ServiceName = "test-build-statsd"
+	conf.StatsdAddress = "example.com:http"
+	mc, err := metrics.NewContext(conf)
+	h.Ok(t, err)
+	h.Equals(t, mc.Metrics.Config.ServiceName, "test-build-statsd")
+	h.Equals(t, fmt.Sprintf("%T", *mc.MapSink), "mapsink.MapSink")
+	h.Equals(t, fmt.Sprintf("%T", *mc.StatsdSink), "metrics.StatsdSink")
 }
 
-// Get a new metric object with a mock sink
-func newTestMetric() (*gmetrics.Metrics, *MockSink, error) {
+func TestContext_BuildConfig(t *testing.T) {
 	config.Load(configFileName)
-	s := &MockSink{}
-	m, err := metrics.NewObject(nil, s)
-	return m, s, err
+	mc, err := metrics.NewContext(nil)
+	h.Ok(t, err)
+	h.Equals(t, mc.Metrics.Config.ServiceName, "operator-admin")
+	h.Equals(t, fmt.Sprintf("%T", *mc.MapSink), "mapsink.MapSink")
+	h.Equals(t, mc.StatsdSink, (*gmetrics.StatsdSink)(nil))
 }
 
-func TestMetrics_Build(t *testing.T) {
-	m, s, err := newTestMetric()
+func TestMapSink_Counter(t *testing.T) {
+	conf := &config.Metrics{}
+	conf.ServiceName = "test-counter"
+	mc, err := metrics.NewContext(conf)
 	h.Ok(t, err)
-	h.Equals(t, m.Config.ServiceName, "operator-admin")
-	h.Equals(t, fmt.Sprintf("%T", *s), "metrics_test.MockSink")
+
+	mc.Metrics.IncrCounter([]string{"my_key"}, float32(1))
+	json, err := mc.MapSink.MarshalJSON()
+	h.Equals(t, err, nil)
+	h.Equals(t, string(json), "{\"test-counter.my_key\":1}")
 }
 
-func TestMetrics_Counter(t *testing.T) {
-	m, s, err := newTestMetric()
+func TestContext_Reuse(t *testing.T) {
+	conf := &config.Metrics{}
+	conf.ServiceName = "test-reuse"
+	conf.StatsdAddress = "example.com:http"
+	mc, err := metrics.GetContext(conf)
 	h.Ok(t, err)
 
-	m.IncrCounter([]string{"my_key"}, float32(1))
-	h.Equals(t, s.keys[0][0], "operator-admin") // Service Name
-	h.Equals(t, s.keys[0][1], "my_key")         // Key
-	h.Equals(t, s.vals[0], float32(1))          // Value
-}
-
-func TestMetrics_Reuse(t *testing.T) {
-	config.Load(configFileName)
-	s := &MockSink{}
-	m, err := metrics.GetObject(nil, s)
+	mc2, err := metrics.GetContext(conf)
 	h.Ok(t, err)
-
-	m2, err := metrics.GetObject(nil, s)
-	h.Ok(t, err)
-	h.Equals(t, m, m2)
+	h.Equals(t, mc, mc2)
 }

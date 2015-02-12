@@ -6,21 +6,22 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterPermissionRoutes registers the permission routes and handlers
-func RegisterPermissionRoutes(prefix string, router *mux.Router, mc MetricsContext) {
-	router.Handle(prefix, mc.middleware.HandlerFunc(ListPermissions, "permissions.list")).Methods("GET")
-	router.Handle(prefix, mc.middleware.HandlerFunc(CreatePermission, "permissions.create")).Methods("POST")
+func RegisterPermissionRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
+	router.Handle(prefix, mc.Middleware.HandlerFunc(ListPermissions, "permissions.list")).Methods("GET")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(CreatePermission, "permissions.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{permissionID}", mc.middleware.HandlerFunc(GetPermission, "permissions.get")).Methods("GET")
-	sub.Handle("/{permissionID}", mc.middleware.HandlerFunc(UpdatePermission, "permissions.update")).Methods("PATCH")
-	sub.Handle("/{permissionID}", mc.middleware.HandlerFunc(DeletePermission, "permissions.delete")).Methods("DELETE")
-	sub.Handle("/{permissionID}/projects", mc.middleware.HandlerFunc(GetPermissionProjects, "permissions.projects.get")).Methods("GET")
-	sub.Handle("/{permissionID}/projects", mc.middleware.HandlerFunc(SetPermissionProjects, "permissions.projects.set")).Methods("PUT")
-	sub.Handle("/{permissionID}/projects/{projectID}", mc.middleware.HandlerFunc(AddPermissionProject, "permissions.projects.add")).Methods("PUT")
-	sub.Handle("/{permissionID}/projects/{projectID}", mc.middleware.HandlerFunc(RemovePermissionProject, "permissions.projects.remove")).Methods("DELETE")
+	sub.Handle("/{permissionID}", mc.Middleware.HandlerFunc(GetPermission, "permissions.get")).Methods("GET")
+	sub.Handle("/{permissionID}", mc.Middleware.HandlerFunc(UpdatePermission, "permissions.update")).Methods("PATCH")
+	sub.Handle("/{permissionID}", mc.Middleware.HandlerFunc(DeletePermission, "permissions.delete")).Methods("DELETE")
+	sub.Handle("/{permissionID}/projects", mc.Middleware.HandlerFunc(GetPermissionProjects, "permissions.projects.get")).Methods("GET")
+	sub.Handle("/{permissionID}/projects", mc.Middleware.HandlerFunc(SetPermissionProjects, "permissions.projects.set")).Methods("PUT")
+	sub.Handle("/{permissionID}/projects/{projectID}", mc.Middleware.HandlerFunc(AddPermissionProject, "permissions.projects.add")).Methods("PUT")
+	sub.Handle("/{permissionID}/projects/{projectID}", mc.Middleware.HandlerFunc(RemovePermissionProject, "permissions.projects.remove")).Methods("DELETE")
 }
 
 // ListPermissions gets a list of all permissions

@@ -6,25 +6,26 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterProjectRoutes registers the project routes and handlers
-func RegisterProjectRoutes(prefix string, router *mux.Router, mc MetricsContext) {
-	router.Handle(prefix, mc.middleware.HandlerFunc(ListProjects, "projects.list")).Methods("GET")
-	router.Handle(prefix, mc.middleware.HandlerFunc(CreateProject, "projects.create")).Methods("POST")
+func RegisterProjectRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
+	router.Handle(prefix, mc.Middleware.HandlerFunc(ListProjects, "projects.list")).Methods("GET")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateProject, "projects.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{projectID}", mc.middleware.HandlerFunc(GetProject, "projects.get")).Methods("GET")
-	sub.Handle("/{projectID}", mc.middleware.HandlerFunc(UpdateProject, "projects.update")).Methods("PATCH")
-	sub.Handle("/{projectID}", mc.middleware.HandlerFunc(DeleteProject, "projects.delete")).Methods("DELETE")
-	sub.Handle("/{projectID}/users", mc.middleware.HandlerFunc(GetProjectUsers, "projects.users.get")).Methods("GET")
-	sub.Handle("/{projectID}/users", mc.middleware.HandlerFunc(SetProjectUsers, "projects.users.set")).Methods("PUT")
-	sub.Handle("/{projectID}/users/{userID}", mc.middleware.HandlerFunc(AddProjectUser, "projects.users.add")).Methods("PUT")
-	sub.Handle("/{projectID}/users/{userID}", mc.middleware.HandlerFunc(RemoveProjectUser, "projects.users.remove")).Methods("DELETE")
-	sub.Handle("/{projectID}/permissions", mc.middleware.HandlerFunc(GetProjectPermissions, "projects.permissions.get")).Methods("GET")
-	sub.Handle("/{projectID}/permissions", mc.middleware.HandlerFunc(SetProjectPermissions, "projects.permissions.set")).Methods("PUT")
-	sub.Handle("/{projectID}/permissions/{permissionID}", mc.middleware.HandlerFunc(AddProjectPermission, "projects.permissions.add")).Methods("PUT")
-	sub.Handle("/{projectID}/permissions/{permissionID}", mc.middleware.HandlerFunc(RemoveProjectPermission, "projects.permissions.remove")).Methods("DELETE")
+	sub.Handle("/{projectID}", mc.Middleware.HandlerFunc(GetProject, "projects.get")).Methods("GET")
+	sub.Handle("/{projectID}", mc.Middleware.HandlerFunc(UpdateProject, "projects.update")).Methods("PATCH")
+	sub.Handle("/{projectID}", mc.Middleware.HandlerFunc(DeleteProject, "projects.delete")).Methods("DELETE")
+	sub.Handle("/{projectID}/users", mc.Middleware.HandlerFunc(GetProjectUsers, "projects.users.get")).Methods("GET")
+	sub.Handle("/{projectID}/users", mc.Middleware.HandlerFunc(SetProjectUsers, "projects.users.set")).Methods("PUT")
+	sub.Handle("/{projectID}/users/{userID}", mc.Middleware.HandlerFunc(AddProjectUser, "projects.users.add")).Methods("PUT")
+	sub.Handle("/{projectID}/users/{userID}", mc.Middleware.HandlerFunc(RemoveProjectUser, "projects.users.remove")).Methods("DELETE")
+	sub.Handle("/{projectID}/permissions", mc.Middleware.HandlerFunc(GetProjectPermissions, "projects.permissions.get")).Methods("GET")
+	sub.Handle("/{projectID}/permissions", mc.Middleware.HandlerFunc(SetProjectPermissions, "projects.permissions.set")).Methods("PUT")
+	sub.Handle("/{projectID}/permissions/{permissionID}", mc.Middleware.HandlerFunc(AddProjectPermission, "projects.permissions.add")).Methods("PUT")
+	sub.Handle("/{projectID}/permissions/{permissionID}", mc.Middleware.HandlerFunc(RemoveProjectPermission, "projects.permissions.remove")).Methods("DELETE")
 }
 
 // ListProjects gets a list of all projects

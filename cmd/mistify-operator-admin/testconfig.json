@@ -8,27 +8,7 @@
         "port": 5432
     },
     "metrics": {
-        "sinks": [
-            {
-                "sink_type": "Test",
-                "interval": "10s",
-                "retain": "5m"
-            }
-        ],
-        "service_name": "operator-admin",
-        "host_name": "",
-        "timer_granularity": "Millisecond",
-        "profile_interval": "Second",
-        "url_to_key": {
-            "allowed_chunks": [
-                "ipranges",
-                "hypervisors",
-                "network",
-                "projects",
-                "users",
-                "permissions"
-            ]
-        }
+        "service_name": "operator-admin"
     },
     "mistify": {
         "foobar": {

@@ -7,21 +7,22 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterNetworkRoutes registers the network routes and handlers
-func RegisterNetworkRoutes(prefix string, router *mux.Router, mc MetricsContext) {
-	router.Handle(prefix, mc.middleware.HandlerFunc(ListNetworks, "networks.list")).Methods("GET")
-	router.Handle(prefix, mc.middleware.HandlerFunc(CreateNetwork, "networks.create")).Methods("POST")
+func RegisterNetworkRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
+	router.Handle(prefix, mc.Middleware.HandlerFunc(ListNetworks, "networks.list")).Methods("GET")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateNetwork, "networks.create")).Methods("POST")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{networkID}", mc.middleware.HandlerFunc(GetNetwork, "networks.get")).Methods("GET")
-	sub.Handle("/{networkID}", mc.middleware.HandlerFunc(UpdateNetwork, "networks.update")).Methods("PATCH")
-	sub.Handle("/{networkID}", mc.middleware.HandlerFunc(DeleteNetwork, "networks.delete")).Methods("DELETE")
-	sub.Handle("/{networkID}/ipranges", mc.middleware.HandlerFunc(GetNetworkIPRanges, "networks.ipranges.get")).Methods("GET")
-	sub.Handle("/{networkID}/ipranges", mc.middleware.HandlerFunc(SetNetworkIPRanges, "networks.ipranges.set")).Methods("PUT")
-	sub.Handle("/{networkID}/ipranges/{iprangeID}", mc.middleware.HandlerFunc(AddNetworkIPRange, "networks.ipranges.add")).Methods("PUT")
-	sub.Handle("/{networkID}/ipranges/{iprangeID}", mc.middleware.HandlerFunc(RemoveNetworkIPRange, "networks.ipranges.remove")).Methods("DELETE")
+	sub.Handle("/{networkID}", mc.Middleware.HandlerFunc(GetNetwork, "networks.get")).Methods("GET")
+	sub.Handle("/{networkID}", mc.Middleware.HandlerFunc(UpdateNetwork, "networks.update")).Methods("PATCH")
+	sub.Handle("/{networkID}", mc.Middleware.HandlerFunc(DeleteNetwork, "networks.delete")).Methods("DELETE")
+	sub.Handle("/{networkID}/ipranges", mc.Middleware.HandlerFunc(GetNetworkIPRanges, "networks.ipranges.get")).Methods("GET")
+	sub.Handle("/{networkID}/ipranges", mc.Middleware.HandlerFunc(SetNetworkIPRanges, "networks.ipranges.set")).Methods("PUT")
+	sub.Handle("/{networkID}/ipranges/{iprangeID}", mc.Middleware.HandlerFunc(AddNetworkIPRange, "networks.ipranges.add")).Methods("PUT")
+	sub.Handle("/{networkID}/ipranges/{iprangeID}", mc.Middleware.HandlerFunc(RemoveNetworkIPRange, "networks.ipranges.remove")).Methods("DELETE")
 }
 
 // ListNetworks gets a list of all networks

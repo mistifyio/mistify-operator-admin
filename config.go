@@ -5,19 +5,20 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterConfigRoutes registers the config routes and handlers
-func RegisterConfigRoutes(prefix string, router *mux.Router, mc MetricsContext) {
-	router.Handle(prefix, mc.middleware.HandlerFunc(GetConfig, "config.get")).Methods("GET")
-	router.Handle(prefix, mc.middleware.HandlerFunc(SetConfig, "config.set")).Methods("PUT")
-	router.Handle(prefix, mc.middleware.HandlerFunc(UpdateConfig, "config.update")).Methods("PATCH")
+func RegisterConfigRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
+	router.Handle(prefix, mc.Middleware.HandlerFunc(GetConfig, "config.get")).Methods("GET")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(SetConfig, "config.set")).Methods("PUT")
+	router.Handle(prefix, mc.Middleware.HandlerFunc(UpdateConfig, "config.update")).Methods("PATCH")
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{namespace}", mc.middleware.HandlerFunc(GetConfigNamespace, "config.namespace.get")).Methods("GET")
-	sub.Handle("/{namespace}", mc.middleware.HandlerFunc(SetConfigNamespace, "config.namespace.set")).Methods("PUT")
-	sub.Handle("/{namespace}", mc.middleware.HandlerFunc(DeleteConfigNamespace, "config.namespace.delete")).Methods("DELETE")
-	sub.Handle("/{namespace}/{key}", mc.middleware.HandlerFunc(DeleteConfigKey, "config.namespace.deletekey")).Methods("DELETE")
+	sub.Handle("/{namespace}", mc.Middleware.HandlerFunc(GetConfigNamespace, "config.namespace.get")).Methods("GET")
+	sub.Handle("/{namespace}", mc.Middleware.HandlerFunc(SetConfigNamespace, "config.namespace.set")).Methods("PUT")
+	sub.Handle("/{namespace}", mc.Middleware.HandlerFunc(DeleteConfigNamespace, "config.namespace.delete")).Methods("DELETE")
+	sub.Handle("/{namespace}/{key}", mc.Middleware.HandlerFunc(DeleteConfigKey, "config.namespace.deletekey")).Methods("DELETE")
 }
 
 // GetConfig gets the config
