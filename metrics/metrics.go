@@ -1,8 +1,6 @@
 package metrics
 
 import (
-	"sync"
-
 	gmetrics "github.com/armon/go-metrics"
 	"github.com/bakins/go-metrics-map"
 	"github.com/bakins/go-metrics-middleware"
@@ -18,39 +16,32 @@ type MetricsContext struct {
 	StatsdSink *gmetrics.StatsdSink
 }
 
-// If different statsd addresses are requested, they should result in entirely
-// different contexts
-var contexts map[string]*MetricsContext = make(map[string]*MetricsContext)
-var mutex sync.Mutex
+// One metrics context only
+var context *MetricsContext
+var contextLoaded bool = false
 
-// Get the metrics context for a statsd address, or create one
-func GetContext(apiConfig *config.Metrics) (*MetricsContext, error) {
-	// Use the loaded default if one is not provided
-	if apiConfig == nil {
-		conf := config.Get()
-		apiConfig = &conf.Metrics
-	}
-
-	// Look up the address and return if necessary
-	var key = apiConfig.ServiceName + apiConfig.StatsdAddress
-	var err error
-	mc, ok := contexts[key]
-	if ok {
-		return mc, nil
-	}
-
-	// Build a new context, store it, and return
-	mutex.Lock()
-	defer mutex.Unlock()
-	mc, err = NewContext(apiConfig)
+// Load the metrics context
+func LoadContext() error {
+	conf := config.Get()
+	apiConfig := &conf.Metrics
+	mc, err := NewContext(apiConfig)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	contexts[key] = mc
-	return mc, nil
+	context = mc
+	contextLoaded = true
+	return nil
 }
 
-// Get a new metrics context given a statsd address
+// Get the metrics context
+func GetContext() *MetricsContext {
+	if !contextLoaded {
+		LoadContext()
+	}
+	return context
+}
+
+// Get a new metrics context given a statsd address and service name
 func NewContext(apiConfig *config.Metrics) (*MetricsContext, error) {
 	// Use the loaded default if one is not provided
 	if apiConfig == nil {

@@ -47,10 +47,11 @@ func Run(port uint) error {
 	)
 
 	// Metrics context to monitor endpoints
-	mc, err := metrics.GetContext(nil)
+	err := metrics.LoadContext()
 	if err != nil {
 		fmt.Println(err)
 	}
+	mc := metrics.GetContext()
 
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass
 	// a prefixed subrouter to the register functions and have the base path
