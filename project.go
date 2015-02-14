@@ -6,26 +6,25 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
-	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterProjectRoutes registers the project routes and handlers
-func RegisterProjectRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
-	router.Handle(prefix, mc.Middleware.HandlerFunc(ListProjects, "projects.list")).Methods("GET")
-	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateProject, "projects.create")).Methods("POST")
+func RegisterProjectRoutes(prefix string, router *mux.Router) {
+	RegisterOneRoute(router, RouteInfo{prefix, ListProjects, []string{"GET"}, "projects.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateProject, []string{"POST"}, "projects.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{projectID}", mc.Middleware.HandlerFunc(GetProject, "projects.get")).Methods("GET")
-	sub.Handle("/{projectID}", mc.Middleware.HandlerFunc(UpdateProject, "projects.update")).Methods("PATCH")
-	sub.Handle("/{projectID}", mc.Middleware.HandlerFunc(DeleteProject, "projects.delete")).Methods("DELETE")
-	sub.Handle("/{projectID}/users", mc.Middleware.HandlerFunc(GetProjectUsers, "projects.users.get")).Methods("GET")
-	sub.Handle("/{projectID}/users", mc.Middleware.HandlerFunc(SetProjectUsers, "projects.users.set")).Methods("PUT")
-	sub.Handle("/{projectID}/users/{userID}", mc.Middleware.HandlerFunc(AddProjectUser, "projects.users.add")).Methods("PUT")
-	sub.Handle("/{projectID}/users/{userID}", mc.Middleware.HandlerFunc(RemoveProjectUser, "projects.users.remove")).Methods("DELETE")
-	sub.Handle("/{projectID}/permissions", mc.Middleware.HandlerFunc(GetProjectPermissions, "projects.permissions.get")).Methods("GET")
-	sub.Handle("/{projectID}/permissions", mc.Middleware.HandlerFunc(SetProjectPermissions, "projects.permissions.set")).Methods("PUT")
-	sub.Handle("/{projectID}/permissions/{permissionID}", mc.Middleware.HandlerFunc(AddProjectPermission, "projects.permissions.add")).Methods("PUT")
-	sub.Handle("/{projectID}/permissions/{permissionID}", mc.Middleware.HandlerFunc(RemoveProjectPermission, "projects.permissions.remove")).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}", GetProject, []string{"GET"}, "projects.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}", UpdateProject, []string{"PATCH"}, "projects.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}", DeleteProject, []string{"DELETE"}, "projects.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users", GetProjectUsers, []string{"GET"}, "projects.users.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users", SetProjectUsers, []string{"PUT"}, "projects.users.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users/{userID}", AddProjectUser, []string{"PUT"}, "projects.users.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users/{userID}", RemoveProjectUser, []string{"DELETE"}, "projects.users.remove"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions", GetProjectPermissions, []string{"GET"}, "projects.permissions.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions", SetProjectPermissions, []string{"PUT"}, "projects.permissions.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions/{permissionID}", AddProjectPermission, []string{"PUT"}, "projects.permissions.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions/{permissionID}", RemoveProjectPermission, []string{"DELETE"}, "projects.permissions.remove"})
 }
 
 // ListProjects gets a list of all projects

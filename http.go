@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
@@ -28,6 +29,14 @@ type (
 		Code    int      `json:"code"`
 		Stack   []string `json:"stack"`
 	}
+
+	// RouteInfo is used by RegisterOneRoute below for the most common route setup
+	RouteInfo struct {
+		prefix     string
+		handler    http.HandlerFunc
+		methods    []string
+		metricsKey string
+	}
 )
 
 // Run starts the server
@@ -46,34 +55,30 @@ func Run(port uint) error {
 		},
 	)
 
-	// Metrics context to monitor endpoints
-	err := metrics.LoadContext()
-	if err != nil {
-		fmt.Println(err)
-	}
-	mc := metrics.GetContext()
-
 	// NOTE: Due to weirdness with PrefixPath and StrictSlash, can't just pass
 	// a prefixed subrouter to the register functions and have the base path
 	// work cleanly. The register functions need to add a base path handler to
 	// the main router before setting subhandlers on either main or subrouter
 
 	// Register the various routes
-	RegisterPermissionRoutes("/permissions", router, mc)
-	RegisterNetworkRoutes("/networks", router, mc)
-	RegisterIPRangeRoutes("/ipranges", router, mc)
-	RegisterHypervisorRoutes("/hypervisors", router, mc)
-	RegisterProjectRoutes("/projects", router, mc)
-	RegisterUserRoutes("/users", router, mc)
-	RegisterFlavorRoutes("/flavors", router, mc)
-	RegisterConfigRoutes("/config", router, mc)
+	RegisterPermissionRoutes("/permissions", router)
+	RegisterNetworkRoutes("/networks", router)
+	RegisterIPRangeRoutes("/ipranges", router)
+	RegisterHypervisorRoutes("/hypervisors", router)
+	RegisterProjectRoutes("/projects", router)
+	RegisterUserRoutes("/users", router)
+	RegisterFlavorRoutes("/flavors", router)
+	RegisterConfigRoutes("/config", router)
 
 	// Add a metrics route
-	router.Handle("/metrics", commonMiddleware.Append(mc.Middleware.HandlerWrapper("metrics")).ThenFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json; charset=utf-8")
-			json.NewEncoder(w).Encode(mc.MapSink)
-		}))
+	mc := metrics.GetContext()
+	if mc != nil {
+		router.Handle("/metrics", commonMiddleware.Append(mc.Middleware.HandlerWrapper("metrics")).ThenFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				json.NewEncoder(w).Encode(mc.MapSink)
+			}))
+	}
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
@@ -81,6 +86,18 @@ func Run(port uint) error {
 		MaxHeaderBytes: 1 << 20,
 	}
 	return server.ListenAndServe()
+}
+
+// RegisterOneRoute adds a route to the router, including the metrics wrapper if
+// it was created without issues (and if a metrics key is given with the route
+// info); for use by endpoint group register functions
+func RegisterOneRoute(router *mux.Router, r RouteInfo) {
+	mc := metrics.GetContext()
+	if mc == nil || r.metricsKey == "" {
+		router.Handle(r.prefix, r.handler).Methods(r.methods...)
+	} else {
+		router.Handle(r.prefix, mc.Middleware.HandlerFunc(r.handler, r.metricsKey)).Methods(r.methods...)
+	}
 }
 
 // JSON writes appropriate headers and JSON body to the http response

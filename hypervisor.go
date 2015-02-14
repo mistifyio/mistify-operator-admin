@@ -7,22 +7,21 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
-	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterHypervisorRoutes registers the hypervisor routes and handlers
-func RegisterHypervisorRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
-	router.Handle(prefix, mc.Middleware.HandlerFunc(ListHypervisors, "hypervisors.list")).Methods("GET")
-	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateHypervisor, "hypervisors.create")).Methods("POST")
+func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
+	RegisterOneRoute(router, RouteInfo{prefix, ListHypervisors, []string{"GET"}, "hypervisors.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateHypervisor, []string{"POST"}, "hypervisors.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{hypervisorID}", mc.Middleware.HandlerFunc(GetHypervisor, "hypervisors.get")).Methods("GET")
-	sub.Handle("/{hypervisorID}", mc.Middleware.HandlerFunc(UpdateHypervisor, "hypervisors.update")).Methods("PATCH")
-	sub.Handle("/{hypervisorID}", mc.Middleware.HandlerFunc(DeleteHypervisor, "hypervisors.delete")).Methods("DELETE")
-	sub.Handle("/{hypervisorID}/ipranges", mc.Middleware.HandlerFunc(GetHypervisorIPRanges, "hypervisors.ipranges.get")).Methods("GET")
-	sub.Handle("/{hypervisorID}/ipranges", mc.Middleware.HandlerFunc(SetHypervisorIPRanges, "hypervisors.ipranges.set")).Methods("PUT")
-	sub.Handle("/{hypervisorID}/ipranges/{iprangeID}", mc.Middleware.HandlerFunc(AddHypervisorIPRange, "hypervisors.ipranges.add")).Methods("PUT")
-	sub.Handle("/{hypervisorID}/ipranges/{iprangeID}", mc.Middleware.HandlerFunc(RemoveHypervisorIPRange, "hypervisors.ipranges.remove")).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}", GetHypervisor, []string{"GET"}, "hypervisors.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}", UpdateHypervisor, []string{"PATCH"}, "hypervisors.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}", DeleteHypervisor, []string{"DELETE"}, "hypervisors.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges", GetHypervisorIPRanges, []string{"GET"}, "hypervisors.ipranges.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges", SetHypervisorIPRanges, []string{"PUT"}, "hypervisors.ipranges.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges/{iprangeID}", AddHypervisorIPRange, []string{"PUT"}, "hypervisors.ipranges.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges/{iprangeID}", RemoveHypervisorIPRange, []string{"DELETE"}, "hypervisors.ipranges.remove"})
 }
 
 // ListHypervisors gets a list of all hypervisors

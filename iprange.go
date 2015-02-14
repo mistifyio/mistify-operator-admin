@@ -7,25 +7,24 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
-	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterIPRangeRoutes registers the iprange routes and handlers
-func RegisterIPRangeRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
-	router.Handle(prefix, mc.Middleware.HandlerFunc(ListIPRanges, "ipranges.list")).Methods("GET")
-	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateIPRange, "ipranges.create")).Methods("POST")
+func RegisterIPRangeRoutes(prefix string, router *mux.Router) {
+	RegisterOneRoute(router, RouteInfo{prefix, ListIPRanges, []string{"GET"}, "ipranges.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateIPRange, []string{"POST"}, "ipranges.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{iprangeID}", mc.Middleware.HandlerFunc(GetIPRange, "ipranges.get")).Methods("GET")
-	sub.Handle("/{iprangeID}", mc.Middleware.HandlerFunc(UpdateIPRange, "ipranges.update")).Methods("PATCH")
-	sub.Handle("/{iprangeID}", mc.Middleware.HandlerFunc(DeleteIPRange, "ipranges.delete")).Methods("DELETE")
-	sub.Handle("/{iprangeID}/hypervisors", mc.Middleware.HandlerFunc(GetIPRangeHypervisors, "ipranges.hypervisors.get")).Methods("GET")
-	sub.Handle("/{iprangeID}/hypervisors", mc.Middleware.HandlerFunc(SetIPRangeHypervisors, "ipranges.hypervisors.set")).Methods("PUT")
-	sub.Handle("/{iprangeID}/hypervisors/{hypervisorID}", mc.Middleware.HandlerFunc(AddIPRangeHypervisor, "ipranges.hypervisors.add")).Methods("PUT")
-	sub.Handle("/{iprangeID}/hypervisors/{hypervisorID}", mc.Middleware.HandlerFunc(RemoveIPRangeHypervisor, "ipranges.hypervisors.remove")).Methods("DELETE")
-	sub.Handle("/{iprangeID}/network", mc.Middleware.HandlerFunc(GetIPRangeNetwork, "ipranges.hypervisors.getnetwork")).Methods("GET")
-	sub.Handle("/{iprangeID}/network/{networkID}", mc.Middleware.HandlerFunc(SetIPRangeNetwork, "ipranges.hypervisors.setnetwork")).Methods("PUT")
-	sub.Handle("/{iprangeID}/network/{networkID}", mc.Middleware.HandlerFunc(RemoveIPRangeNetwork, "ipranges.hypervisors.removenetwork")).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}", GetIPRange, []string{"GET"}, "ipranges.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}", UpdateIPRange, []string{"PATCH"}, "ipranges.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}", DeleteIPRange, []string{"DELETE"}, "ipranges.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors", GetIPRangeHypervisors, []string{"GET"}, "ipranges.hypervisors.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors", SetIPRangeHypervisors, []string{"PUT"}, "ipranges.hypervisors.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors/{hypervisorID}", AddIPRangeHypervisor, []string{"PUT"}, "ipranges.hypervisors.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors/{hypervisorID}", RemoveIPRangeHypervisor, []string{"DELETE"}, "ipranges.hypervisors.remove"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/network", GetIPRangeNetwork, []string{"GET"}, "ipranges.hypervisors.getnetwork"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/network/{networkID}", SetIPRangeNetwork, []string{"PUT"}, "ipranges.hypervisors.setnetwork"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/network/{networkID}", RemoveIPRangeNetwork, []string{"DELETE"}, "ipranges.hypervisors.removenetwork"})
 }
 
 // ListIPRanges gets a list of all ipranges

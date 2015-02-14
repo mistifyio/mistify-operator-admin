@@ -8,6 +8,7 @@ import (
 	"github.com/mistifyio/mistify-operator-admin"
 	"github.com/mistifyio/mistify-operator-admin/config"
 	"github.com/mistifyio/mistify-operator-admin/db"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 )
 
 func main() {
@@ -42,6 +43,10 @@ func main() {
 	if statsd != "" {
 		conf := config.Get()
 		conf.Metrics.StatsdAddress = statsd
+	}
+
+	if err := metrics.LoadContext(); err != nil {
+		log.Warning(err)
 	}
 
 	_, err := db.Connect(nil)

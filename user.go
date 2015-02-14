@@ -6,22 +6,21 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
-	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterUserRoutes registers the user routes and handlers
-func RegisterUserRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
-	router.Handle(prefix, mc.Middleware.HandlerFunc(ListUsers, "users.list")).Methods("GET")
-	router.Handle(prefix, mc.Middleware.HandlerFunc(CreateUser, "users.create")).Methods("POST")
+func RegisterUserRoutes(prefix string, router *mux.Router) {
+	RegisterOneRoute(router, RouteInfo{prefix, ListUsers, []string{"GET"}, "users.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateUser, []string{"POST"}, "users.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{userID}", mc.Middleware.HandlerFunc(GetUser, "users.get")).Methods("GET")
-	sub.Handle("/{userID}", mc.Middleware.HandlerFunc(UpdateUser, "users.update")).Methods("PATCH")
-	sub.Handle("/{userID}", mc.Middleware.HandlerFunc(DeleteUser, "users.delete")).Methods("DELETE")
-	sub.Handle("/{userID}/projects", mc.Middleware.HandlerFunc(GetUserProjects, "users.projects.get")).Methods("GET")
-	sub.Handle("/{userID}/projects", mc.Middleware.HandlerFunc(SetUserProjects, "users.projects.set")).Methods("PUT")
-	sub.Handle("/{userID}/projects/{projectID}", mc.Middleware.HandlerFunc(AddUserProject, "users.projects.add")).Methods("PUT")
-	sub.Handle("/{userID}/projects/{projectID}", mc.Middleware.HandlerFunc(RemoveUserProject, "users.projects.remove")).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{userID}", GetUser, []string{"GET"}, "users.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}", UpdateUser, []string{"PATCH"}, "users.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}", DeleteUser, []string{"DELETE"}, "users.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects", GetUserProjects, []string{"GET"}, "users.projects.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects", SetUserProjects, []string{"PUT"}, "users.projects.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects/{projectID}", AddUserProject, []string{"PUT"}, "users.projects.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects/{projectID}", RemoveUserProject, []string{"DELETE"}, "users.projects.remove"})
 }
 
 // ListUsers gets a list of all users

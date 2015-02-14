@@ -6,22 +6,21 @@ import (
 
 	"code.google.com/p/go-uuid/uuid"
 	"github.com/gorilla/mux"
-	"github.com/mistifyio/mistify-operator-admin/metrics"
 	"github.com/mistifyio/mistify-operator-admin/models"
 )
 
 // RegisterPermissionRoutes registers the permission routes and handlers
-func RegisterPermissionRoutes(prefix string, router *mux.Router, mc *metrics.MetricsContext) {
-	router.Handle(prefix, mc.Middleware.HandlerFunc(ListPermissions, "permissions.list")).Methods("GET")
-	router.Handle(prefix, mc.Middleware.HandlerFunc(CreatePermission, "permissions.create")).Methods("POST")
+func RegisterPermissionRoutes(prefix string, router *mux.Router) {
+	RegisterOneRoute(router, RouteInfo{prefix, ListPermissions, []string{"GET"}, "permissions.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreatePermission, []string{"POST"}, "permissions.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.Handle("/{permissionID}", mc.Middleware.HandlerFunc(GetPermission, "permissions.get")).Methods("GET")
-	sub.Handle("/{permissionID}", mc.Middleware.HandlerFunc(UpdatePermission, "permissions.update")).Methods("PATCH")
-	sub.Handle("/{permissionID}", mc.Middleware.HandlerFunc(DeletePermission, "permissions.delete")).Methods("DELETE")
-	sub.Handle("/{permissionID}/projects", mc.Middleware.HandlerFunc(GetPermissionProjects, "permissions.projects.get")).Methods("GET")
-	sub.Handle("/{permissionID}/projects", mc.Middleware.HandlerFunc(SetPermissionProjects, "permissions.projects.set")).Methods("PUT")
-	sub.Handle("/{permissionID}/projects/{projectID}", mc.Middleware.HandlerFunc(AddPermissionProject, "permissions.projects.add")).Methods("PUT")
-	sub.Handle("/{permissionID}/projects/{projectID}", mc.Middleware.HandlerFunc(RemovePermissionProject, "permissions.projects.remove")).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}", GetPermission, []string{"GET"}, "permissions.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}", UpdatePermission, []string{"PATCH"}, "permissions.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}", DeletePermission, []string{"DELETE"}, "permissions.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects", GetPermissionProjects, []string{"GET"}, "permissions.projects.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects", SetPermissionProjects, []string{"PUT"}, "permissions.projects.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects/{projectID}", AddPermissionProject, []string{"PUT"}, "permissions.projects.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects/{projectID}", RemovePermissionProject, []string{"DELETE"}, "permissions.projects.remove"})
 }
 
 // ListPermissions gets a list of all permissions
