@@ -55,13 +55,7 @@ func TestMapSink_Counter(t *testing.T) {
 }
 
 func TestContext_Reuse(t *testing.T) {
-	conf := &config.Metrics{}
-	conf.ServiceName = "test-reuse"
-	conf.StatsdAddress = "example.com:http"
-	mc, err := metrics.GetContext(conf)
-	h.Ok(t, err)
-
-	mc2, err := metrics.GetContext(conf)
-	h.Ok(t, err)
+	mc := metrics.GetContext()
+	mc2 := metrics.GetContext()
 	h.Equals(t, mc, mc2)
 }
