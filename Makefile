@@ -40,9 +40,14 @@ test_db: cmd/mistify-operator-admin/testconfig.json
 	cd db && \
 	go test -cover
 
+test_metrics: cmd/mistify-operator-admin/testconfig.json
+	@echo "\n===== Test Metrics =====" && \
+	cd metrics && \
+	go test -cover
+
 test_models: cmd/mistify-operator-admin/testconfig.json
 	@echo "\n===== Test Models =====" && \
 	cd models && \
 	go test -cover
 
-test : | test_clean test_setup test_config test_db test_models test_clean
+test : | test_clean test_setup test_config test_db test_metrics test_models test_clean
