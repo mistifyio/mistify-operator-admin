@@ -11,16 +11,16 @@ import (
 
 // RegisterPermissionRoutes registers the permission routes and handlers
 func RegisterPermissionRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListPermissions).Methods("GET")
-	router.HandleFunc(prefix, CreatePermission).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListPermissions, []string{"GET"}, "permissions.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreatePermission, []string{"POST"}, "permissions.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{permissionID}", GetPermission).Methods("GET")
-	sub.HandleFunc("/{permissionID}", UpdatePermission).Methods("PATCH")
-	sub.HandleFunc("/{permissionID}", DeletePermission).Methods("DELETE")
-	sub.HandleFunc("/{permissionID}/projects", GetPermissionProjects).Methods("GET")
-	sub.HandleFunc("/{permissionID}/projects", SetPermissionProjects).Methods("PUT")
-	sub.HandleFunc("/{permissionID}/projects/{projectID}", AddPermissionProject).Methods("PUT")
-	sub.HandleFunc("/{permissionID}/projects/{projectID}", RemovePermissionProject).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}", GetPermission, []string{"GET"}, "permissions.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}", UpdatePermission, []string{"PATCH"}, "permissions.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}", DeletePermission, []string{"DELETE"}, "permissions.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects", GetPermissionProjects, []string{"GET"}, "permissions.projects.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects", SetPermissionProjects, []string{"PUT"}, "permissions.projects.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects/{projectID}", AddPermissionProject, []string{"PUT"}, "permissions.projects.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{permissionID}/projects/{projectID}", RemovePermissionProject, []string{"DELETE"}, "permissions.projects.remove"})
 }
 
 // ListPermissions gets a list of all permissions

@@ -12,19 +12,19 @@ import (
 
 // RegisterIPRangeRoutes registers the iprange routes and handlers
 func RegisterIPRangeRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListIPRanges).Methods("GET")
-	router.HandleFunc(prefix, CreateIPRange).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListIPRanges, []string{"GET"}, "ipranges.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateIPRange, []string{"POST"}, "ipranges.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{iprangeID}", GetIPRange).Methods("GET")
-	sub.HandleFunc("/{iprangeID}", UpdateIPRange).Methods("PATCH")
-	sub.HandleFunc("/{iprangeID}", DeleteIPRange).Methods("DELETE")
-	sub.HandleFunc("/{iprangeID}/hypervisors", GetIPRangeHypervisors).Methods("GET")
-	sub.HandleFunc("/{iprangeID}/hypervisors", SetIPRangeHypervisors).Methods("PUT")
-	sub.HandleFunc("/{iprangeID}/hypervisors/{hypervisorID}", AddIPRangeHypervisor).Methods("PUT")
-	sub.HandleFunc("/{iprangeID}/hypervisors/{hypervisorID}", RemoveIPRangeHypervisor).Methods("DELETE")
-	sub.HandleFunc("/{iprangeID}/network", GetIPRangeNetwork).Methods("GET")
-	sub.HandleFunc("/{iprangeID}/network/{networkID}", SetIPRangeNetwork).Methods("PUT")
-	sub.HandleFunc("/{iprangeID}/network/{networkID}", RemoveIPRangeNetwork).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}", GetIPRange, []string{"GET"}, "ipranges.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}", UpdateIPRange, []string{"PATCH"}, "ipranges.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}", DeleteIPRange, []string{"DELETE"}, "ipranges.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors", GetIPRangeHypervisors, []string{"GET"}, "ipranges.hypervisors.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors", SetIPRangeHypervisors, []string{"PUT"}, "ipranges.hypervisors.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors/{hypervisorID}", AddIPRangeHypervisor, []string{"PUT"}, "ipranges.hypervisors.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/hypervisors/{hypervisorID}", RemoveIPRangeHypervisor, []string{"DELETE"}, "ipranges.hypervisors.remove"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/network", GetIPRangeNetwork, []string{"GET"}, "ipranges.hypervisors.getnetwork"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/network/{networkID}", SetIPRangeNetwork, []string{"PUT"}, "ipranges.hypervisors.setnetwork"})
+	RegisterOneRoute(sub, RouteInfo{"/{iprangeID}/network/{networkID}", RemoveIPRangeNetwork, []string{"DELETE"}, "ipranges.hypervisors.removenetwork"})
 }
 
 // ListIPRanges gets a list of all ipranges

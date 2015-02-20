@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/justinas/alice"
+	"github.com/mistifyio/mistify-operator-admin/metrics"
 )
 
 type (
@@ -26,6 +28,14 @@ type (
 		Message string   `json:"message"`
 		Code    int      `json:"code"`
 		Stack   []string `json:"stack"`
+	}
+
+	// RouteInfo is used by RegisterOneRoute below for the most common route setup
+	RouteInfo struct {
+		prefix     string
+		handler    http.HandlerFunc
+		methods    []string
+		metricsKey string
 	}
 )
 
@@ -60,12 +70,34 @@ func Run(port uint) error {
 	RegisterFlavorRoutes("/flavors", router)
 	RegisterConfigRoutes("/config", router)
 
+	// Add a metrics route
+	mc := metrics.GetContext()
+	if mc != nil {
+		router.Handle("/metrics", commonMiddleware.Append(mc.Middleware.HandlerWrapper("metrics")).ThenFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json; charset=utf-8")
+				json.NewEncoder(w).Encode(mc.MapSink)
+			}))
+	}
+
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", port),
 		Handler:        commonMiddleware.Then(router),
 		MaxHeaderBytes: 1 << 20,
 	}
 	return server.ListenAndServe()
+}
+
+// RegisterOneRoute adds a route to the router, including the metrics wrapper if
+// it was created without issues (and if a metrics key is given with the route
+// info); for use by endpoint group register functions
+func RegisterOneRoute(router *mux.Router, r RouteInfo) {
+	mc := metrics.GetContext()
+	if mc == nil || r.metricsKey == "" {
+		router.Handle(r.prefix, r.handler).Methods(r.methods...)
+	} else {
+		router.Handle(r.prefix, mc.Middleware.HandlerFunc(r.handler, r.metricsKey)).Methods(r.methods...)
+	}
 }
 
 // JSON writes appropriate headers and JSON body to the http response

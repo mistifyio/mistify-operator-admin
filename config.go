@@ -10,14 +10,14 @@ import (
 
 // RegisterConfigRoutes registers the config routes and handlers
 func RegisterConfigRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, GetConfig).Methods("GET")
-	router.HandleFunc(prefix, SetConfig).Methods("PUT")
-	router.HandleFunc(prefix, UpdateConfig).Methods("PATCH")
+	RegisterOneRoute(router, RouteInfo{prefix, GetConfig, []string{"GET"}, "config.get"})
+	RegisterOneRoute(router, RouteInfo{prefix, SetConfig, []string{"PUT"}, "config.set"})
+	RegisterOneRoute(router, RouteInfo{prefix, UpdateConfig, []string{"PATCH"}, "config.update"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{namespace}", GetConfigNamespace).Methods("GET")
-	sub.HandleFunc("/{namespace}", SetConfigNamespace).Methods("PUT")
-	sub.HandleFunc("/{namespace}", DeleteConfigNamespace).Methods("DELETE")
-	sub.HandleFunc("/{namespace}/{key}", DeleteConfigKey).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{namespace}", GetConfigNamespace, []string{"GET"}, "config.namespace.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{namespace}", SetConfigNamespace, []string{"PUT"}, "config.namespace.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{namespace}", DeleteConfigNamespace, []string{"DELETE"}, "config.namespace.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{namespace}/{key}", DeleteConfigKey, []string{"DELETE"}, "config.namespace.deletekey"})
 }
 
 // GetConfig gets the config

@@ -12,16 +12,16 @@ import (
 
 // RegisterHypervisorRoutes registers the hypervisor routes and handlers
 func RegisterHypervisorRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListHypervisors).Methods("GET")
-	router.HandleFunc(prefix, CreateHypervisor).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListHypervisors, []string{"GET"}, "hypervisors.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateHypervisor, []string{"POST"}, "hypervisors.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{hypervisorID}", GetHypervisor).Methods("GET")
-	sub.HandleFunc("/{hypervisorID}", UpdateHypervisor).Methods("PATCH")
-	sub.HandleFunc("/{hypervisorID}", DeleteHypervisor).Methods("DELETE")
-	sub.HandleFunc("/{hypervisorID}/ipranges", GetHypervisorIPRanges).Methods("GET")
-	sub.HandleFunc("/{hypervisorID}/ipranges", SetHypervisorIPRanges).Methods("PUT")
-	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", AddHypervisorIPRange).Methods("PUT")
-	sub.HandleFunc("/{hypervisorID}/ipranges/{iprangeID}", RemoveHypervisorIPRange).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}", GetHypervisor, []string{"GET"}, "hypervisors.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}", UpdateHypervisor, []string{"PATCH"}, "hypervisors.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}", DeleteHypervisor, []string{"DELETE"}, "hypervisors.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges", GetHypervisorIPRanges, []string{"GET"}, "hypervisors.ipranges.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges", SetHypervisorIPRanges, []string{"PUT"}, "hypervisors.ipranges.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges/{iprangeID}", AddHypervisorIPRange, []string{"PUT"}, "hypervisors.ipranges.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{hypervisorID}/ipranges/{iprangeID}", RemoveHypervisorIPRange, []string{"DELETE"}, "hypervisors.ipranges.remove"})
 }
 
 // ListHypervisors gets a list of all hypervisors

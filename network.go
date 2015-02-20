@@ -12,16 +12,16 @@ import (
 
 // RegisterNetworkRoutes registers the network routes and handlers
 func RegisterNetworkRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListNetworks).Methods("GET")
-	router.HandleFunc(prefix, CreateNetwork).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListNetworks, []string{"GET"}, "networks.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateNetwork, []string{"POST"}, "networks.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{networkID}", GetNetwork).Methods("GET")
-	sub.HandleFunc("/{networkID}", UpdateNetwork).Methods("PATCH")
-	sub.HandleFunc("/{networkID}", DeleteNetwork).Methods("DELETE")
-	sub.HandleFunc("/{networkID}/ipranges", GetNetworkIPRanges).Methods("GET")
-	sub.HandleFunc("/{networkID}/ipranges", SetNetworkIPRanges).Methods("PUT")
-	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", AddNetworkIPRange).Methods("PUT")
-	sub.HandleFunc("/{networkID}/ipranges/{iprangeID}", RemoveNetworkIPRange).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}", GetNetwork, []string{"GET"}, "networks.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}", UpdateNetwork, []string{"PATCH"}, "networks.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}", DeleteNetwork, []string{"DELETE"}, "networks.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}/ipranges", GetNetworkIPRanges, []string{"GET"}, "networks.ipranges.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}/ipranges", SetNetworkIPRanges, []string{"PUT"}, "networks.ipranges.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}/ipranges/{iprangeID}", AddNetworkIPRange, []string{"PUT"}, "networks.ipranges.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{networkID}/ipranges/{iprangeID}", RemoveNetworkIPRange, []string{"DELETE"}, "networks.ipranges.remove"})
 }
 
 // ListNetworks gets a list of all networks

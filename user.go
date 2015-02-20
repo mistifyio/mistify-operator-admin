@@ -11,16 +11,16 @@ import (
 
 // RegisterUserRoutes registers the user routes and handlers
 func RegisterUserRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListUsers).Methods("GET")
-	router.HandleFunc(prefix, CreateUser).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListUsers, []string{"GET"}, "users.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateUser, []string{"POST"}, "users.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{userID}", GetUser).Methods("GET")
-	sub.HandleFunc("/{userID}", UpdateUser).Methods("PATCH")
-	sub.HandleFunc("/{userID}", DeleteUser).Methods("DELETE")
-	sub.HandleFunc("/{userID}/projects", GetUserProjects).Methods("GET")
-	sub.HandleFunc("/{userID}/projects", SetUserProjects).Methods("PUT")
-	sub.HandleFunc("/{userID}/projects/{projectID}", AddUserProject).Methods("PUT")
-	sub.HandleFunc("/{userID}/projects/{projectID}", RemoveUserProject).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{userID}", GetUser, []string{"GET"}, "users.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}", UpdateUser, []string{"PATCH"}, "users.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}", DeleteUser, []string{"DELETE"}, "users.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects", GetUserProjects, []string{"GET"}, "users.projects.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects", SetUserProjects, []string{"PUT"}, "users.projects.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects/{projectID}", AddUserProject, []string{"PUT"}, "users.projects.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{userID}/projects/{projectID}", RemoveUserProject, []string{"DELETE"}, "users.projects.remove"})
 }
 
 // ListUsers gets a list of all users

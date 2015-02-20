@@ -12,6 +12,7 @@ type (
 	// Config struct holds data from a JSON config file
 	Config struct {
 		DB      DB                           `json:"db"`
+		Metrics Metrics                      `json:"metrics"`
 		Mistify map[string]map[string]string `json:"mistify"`
 	}
 )

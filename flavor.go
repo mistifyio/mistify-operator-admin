@@ -11,12 +11,12 @@ import (
 
 // RegisterFlavorRoutes registers the flavor routes and handlers
 func RegisterFlavorRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListFlavors).Methods("GET")
-	router.HandleFunc(prefix, CreateFlavor).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListFlavors, []string{"GET"}, "flavors.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateFlavor, []string{"POST"}, "flavors.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{flavorID}", GetFlavor).Methods("GET")
-	sub.HandleFunc("/{flavorID}", UpdateFlavor).Methods("PATCH")
-	sub.HandleFunc("/{flavorID}", DeleteFlavor).Methods("DELETE")
+	RegisterOneRoute(sub, RouteInfo{"/{flavorID}", GetFlavor, []string{"GET"}, "flavors.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{flavorID}", UpdateFlavor, []string{"PATCH"}, "flavors.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{flavorID}", DeleteFlavor, []string{"DELETE"}, "flavors.delete"})
 }
 
 // ListFlavors get a list of all flavors

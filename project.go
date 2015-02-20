@@ -11,21 +11,20 @@ import (
 
 // RegisterProjectRoutes registers the project routes and handlers
 func RegisterProjectRoutes(prefix string, router *mux.Router) {
-	router.HandleFunc(prefix, ListProjects).Methods("GET")
-	router.HandleFunc(prefix, CreateProject).Methods("POST")
+	RegisterOneRoute(router, RouteInfo{prefix, ListProjects, []string{"GET"}, "projects.list"})
+	RegisterOneRoute(router, RouteInfo{prefix, CreateProject, []string{"POST"}, "projects.create"})
 	sub := router.PathPrefix(prefix).Subrouter()
-	sub.HandleFunc("/{projectID}", GetProject).Methods("GET")
-	sub.HandleFunc("/{projectID}", UpdateProject).Methods("PATCH")
-	sub.HandleFunc("/{projectID}", DeleteProject).Methods("DELETE")
-	sub.HandleFunc("/{projectID}/users", GetProjectUsers).Methods("GET")
-	sub.HandleFunc("/{projectID}/users", SetProjectUsers).Methods("PUT")
-	sub.HandleFunc("/{projectID}/users/{userID}", AddProjectUser).Methods("PUT")
-	sub.HandleFunc("/{projectID}/users/{userID}", RemoveProjectUser).Methods("DELETE")
-	sub.HandleFunc("/{projectID}/permissions", GetProjectPermissions).Methods("GET")
-	sub.HandleFunc("/{projectID}/permissions", SetProjectPermissions).Methods("PUT")
-	sub.HandleFunc("/{projectID}/permissions/{permissionID}", AddProjectPermission).Methods("PUT")
-	sub.HandleFunc("/{projectID}/permissions/{permissionID}", RemoveProjectPermission).Methods("DELETE")
-
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}", GetProject, []string{"GET"}, "projects.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}", UpdateProject, []string{"PATCH"}, "projects.update"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}", DeleteProject, []string{"DELETE"}, "projects.delete"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users", GetProjectUsers, []string{"GET"}, "projects.users.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users", SetProjectUsers, []string{"PUT"}, "projects.users.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users/{userID}", AddProjectUser, []string{"PUT"}, "projects.users.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/users/{userID}", RemoveProjectUser, []string{"DELETE"}, "projects.users.remove"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions", GetProjectPermissions, []string{"GET"}, "projects.permissions.get"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions", SetProjectPermissions, []string{"PUT"}, "projects.permissions.set"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions/{permissionID}", AddProjectPermission, []string{"PUT"}, "projects.permissions.add"})
+	RegisterOneRoute(sub, RouteInfo{"/{projectID}/permissions/{permissionID}", RemoveProjectPermission, []string{"DELETE"}, "projects.permissions.remove"})
 }
 
 // ListProjects gets a list of all projects
