@@ -49,11 +49,11 @@ func main() {
 		conf.Metrics.StatsdAddress = statsd
 	}
 
-	if err = metrics.LoadContext(); err != nil {
+	if err := metrics.LoadContext(); err != nil {
 		log.Warning(err)
 	}
 
-	_, err = db.Connect(nil)
+	_, err := db.Connect(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
