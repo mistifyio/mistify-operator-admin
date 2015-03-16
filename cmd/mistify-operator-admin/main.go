@@ -3,8 +3,9 @@ package main
 import (
 	"os"
 
+	log "github.com/Sirupsen/logrus"
 	flag "github.com/docker/docker/pkg/mflag"
-	"github.com/mistifyio/mistify-agent/log"
+	logx "github.com/mistifyio/mistify-logrus-ext"
 	"github.com/mistifyio/mistify-operator-admin"
 	"github.com/mistifyio/mistify-operator-admin/config"
 	"github.com/mistifyio/mistify-operator-admin/db"
@@ -28,8 +29,12 @@ func main() {
 		os.Exit(0)
 	}
 
-	if err := log.SetLogLevel(logLevel); err != nil {
-		log.Fatal(err)
+	err := logx.DefaultSetup(logLevel)
+	if err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "log.ParseLevel",
+		}).Fatal("Could not parse log level")
 	}
 
 	if configFile == "" {
@@ -45,11 +50,11 @@ func main() {
 		conf.Metrics.StatsdAddress = statsd
 	}
 
-	if err := metrics.LoadContext(); err != nil {
+	if err = metrics.LoadContext(); err != nil {
 		log.Warning(err)
 	}
 
-	_, err := db.Connect(nil)
+	_, err = db.Connect(nil)
 	if err != nil {
 		log.Fatal(err)
 	}
