@@ -29,8 +29,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	err := logx.DefaultSetup(logLevel)
-	if err != nil {
+	if err := logx.DefaultSetup(logLevel); err != nil {
 		log.WithFields(log.Fields{
 			"error": err,
 			"func":  "log.ParseLevel",
