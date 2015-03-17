@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"runtime"
-	"strings"
 
 	"github.com/bakins/net-http-recover"
 	"github.com/gorilla/handlers"
