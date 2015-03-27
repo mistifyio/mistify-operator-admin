@@ -307,7 +307,9 @@ func permissionsFromRows(rows *sql.Rows) ([]*Permission, error) {
 	permissions := make([]*Permission, 0, 1)
 	for rows.Next() {
 		permission := &Permission{}
-		permission.fromRows(rows)
+		if err := permission.fromRows(rows); err != nil {
+			return nil, err
+		}
 		permissions = append(permissions, permission)
 	}
 	return permissions, nil

@@ -331,7 +331,9 @@ func projectsFromRows(rows *sql.Rows) ([]*Project, error) {
 	projects := make([]*Project, 0, 1)
 	for rows.Next() {
 		project := &Project{}
-		project.fromRows(rows)
+		if err := project.fromRows(rows); err != nil {
+			return nil, err
+		}
 		projects = append(projects, project)
 	}
 	return projects, nil

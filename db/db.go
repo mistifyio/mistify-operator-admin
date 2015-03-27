@@ -4,14 +4,16 @@ import (
 	"database/sql"
 	"sync"
 
-	_ "github.com/lib/pq"
+	_ "github.com/lib/pq" // doesn't need to be used directly
 	"github.com/mistifyio/mistify-operator-admin/config"
 )
 
 // The DB structure handles connection pooling, so keep track of opened ones
-var dbConnections map[string]*sql.DB = make(map[string]*sql.DB)
+var dbConnections = make(map[string]*sql.DB)
 var mutex sync.Mutex
 
+// Connect creates or returns an existing database connection based on the data
+// source name (dsn)
 func Connect(dbConfig *config.DB) (*sql.DB, error) {
 	// Use the loaded default if one is not provided
 	if dbConfig == nil {

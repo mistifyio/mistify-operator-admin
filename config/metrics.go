@@ -13,13 +13,13 @@ type Metrics struct {
 }
 
 // Validate ensures that the metrics configuration is reasonable
-func (self *Metrics) Validate() error {
+func (m *Metrics) Validate() error {
 	var result *multierror.Error
-	if self.ServiceName == "" {
+	if m.ServiceName == "" {
 		result = multierror.Append(result, ErrMetricsNoServiceName)
 	}
-	if self.StatsdAddress != "" {
-		_, _, err := net.SplitHostPort(self.StatsdAddress)
+	if m.StatsdAddress != "" {
+		_, _, err := net.SplitHostPort(m.StatsdAddress)
 		if err != nil {
 			result = multierror.Append(result, ErrMetricsBadStatsdAddress)
 			result = multierror.Append(result, err)

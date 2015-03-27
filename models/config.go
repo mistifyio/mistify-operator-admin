@@ -151,12 +151,13 @@ func (config *Config) Load() error {
 
 	for rows.Next() {
 		var namespace, dataJSON string
-		rows.Scan(&namespace, &dataJSON)
-		var data map[string]string
-		if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
-			return err
+		if err := rows.Scan(&namespace, &dataJSON); err == nil {
+			var data map[string]string
+			if err := json.Unmarshal([]byte(dataJSON), &data); err != nil {
+				return err
+			}
+			config.data[namespace] = data
 		}
-		config.data[namespace] = data
 	}
 
 	return rows.Err()
@@ -196,7 +197,7 @@ func (config *Config) Save() error {
 
 	// Clear the table
 	if _, err := txn.Exec("TRUNCATE config"); err != nil {
-		txn.Rollback()
+		_ = txn.Rollback()
 		return err
 	}
 
@@ -213,7 +214,7 @@ func (config *Config) Save() error {
 		placeholders[i] = fmt.Sprintf("($%d, $%d::json)", (i*2)+1, (i*2)+2)
 		dataJSON, err := json.Marshal(data)
 		if err != nil {
-			txn.Rollback()
+			_ = txn.Rollback()
 			return err
 		}
 		values[2*i] = interface{}(namespace)
@@ -227,7 +228,7 @@ func (config *Config) Save() error {
 	`
 	sql += strings.Join(placeholders, ",")
 	if _, err = txn.Exec(sql, values...); err != nil {
-		txn.Rollback()
+		_ = txn.Rollback()
 		return err
 	}
 	return txn.Commit()
