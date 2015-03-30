@@ -41,7 +41,7 @@ func GetContext() *Context {
 	return context
 }
 
-// NewContext creates a new context given a statsd address and service name
+// NewContext creates a new context from the config
 func NewContext(apiConfig *config.Metrics) (*Context, error) {
 	// Use the loaded default if one is not provided
 	if apiConfig == nil {
