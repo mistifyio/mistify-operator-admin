@@ -73,13 +73,12 @@ func SetRelations(tableName string, r1 relatable, r2s []relatable) error {
 
 	deleteSQL := fmt.Sprintf("DELETE FROM %s WHERE %s = $1", tableName, r1pkey)
 	if _, err := txn.Exec(deleteSQL, r1.id()); err != nil {
-		txn.Rollback()
+		_ = txn.Rollback()
 		return err
 	}
 
 	if len(r2s) == 0 {
-		txn.Commit()
-		return err
+		return txn.Commit()
 	}
 
 	r2pkey := r2s[0].pkeyName()
@@ -101,7 +100,7 @@ func SetRelations(tableName string, r1 relatable, r2s []relatable) error {
 		strings.Join(placeholders, ","),
 	)
 	if _, err = txn.Exec(sql, values...); err != nil {
-		txn.Rollback()
+		_ = txn.Rollback()
 		return err
 	}
 	return txn.Commit()

@@ -7,42 +7,42 @@ import (
 	"github.com/mistifyio/mistify-operator-admin/config"
 )
 
-// MetricsContext contains information necessary to add time and count metrics
+// Context contains information necessary to add time and count metrics
 // to routes, show collected metrics, or emit custom metrics from within a route
-type MetricsContext struct {
+type Context struct {
 	Metrics    *gmetrics.Metrics
 	Middleware *mmw.Middleware
 	MapSink    *mapsink.MapSink
 	StatsdSink *gmetrics.StatsdSink
 }
 
-// One metrics context only
-var context *MetricsContext
-var contextLoaded bool = false
+// One context only
+var context *Context
+var contextLoaded = false
 
-// Load the metrics context
+// LoadContext loads the context from config
 func LoadContext() error {
 	conf := config.Get()
 	apiConfig := &conf.Metrics
-	mc, err := NewContext(apiConfig)
+	c, err := NewContext(apiConfig)
 	if err != nil {
 		return err
 	}
-	context = mc
+	context = c
 	contextLoaded = true
 	return nil
 }
 
-// Get the metrics context
-func GetContext() *MetricsContext {
+// GetContext retrieves the context, loading if it has not yet
+func GetContext() *Context {
 	if !contextLoaded {
-		LoadContext()
+		_ = LoadContext()
 	}
 	return context
 }
 
-// Get a new metrics context given a statsd address and service name
-func NewContext(apiConfig *config.Metrics) (*MetricsContext, error) {
+// NewContext creates a new context from the config
+func NewContext(apiConfig *config.Metrics) (*Context, error) {
 	// Use the loaded default if one is not provided
 	if apiConfig == nil {
 		conf := config.Get()
@@ -74,5 +74,5 @@ func NewContext(apiConfig *config.Metrics) (*MetricsContext, error) {
 
 	// Create the middleware and return everything
 	mmw := mmw.New(metrics)
-	return &MetricsContext{metrics, mmw, mapSink, statsdSink}, nil
+	return &Context{metrics, mmw, mapSink, statsdSink}, nil
 }

@@ -57,5 +57,10 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	operator.Run(port)
+	if err := operator.Run(port); err != nil {
+		log.WithFields(log.Fields{
+			"error": err,
+			"func":  "operator.Run",
+		}).Fatal("failed to run server")
+	}
 }
