@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"sync"
 
-	_ "github.com/lib/pq" // doesn't need to be used directly
+	_ "github.com/lib/pq" // registers the postgres database driver
 	"github.com/mistifyio/mistify-operator-admin/config"
 )
 

@@ -41,7 +41,7 @@ var ErrNoGateway = errors.New("missing gateway")
 // ErrNoStartIP is for missing a starting ip in the iprange
 var ErrNoStartIP = errors.New("missing start IP")
 
-// ErrNoStopIP is for missing a stopping ip in the iprange
+// ErrNoEndIP is for missing an ending ip in the iprange
 var ErrNoEndIP = errors.New("missing end IP")
 
 // ErrBadCPU is for an invlid CPU in the flavor
